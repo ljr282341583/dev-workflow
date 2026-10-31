@@ -1,0 +1,2170 @@
+<!doctype html>
+<html lang="zh-CN" class="is-booting">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F4F6FB">
+<meta name="description" content="轻账 · 移动端高保真可点击原型脚手架：单文件、离线可开、5 屏 + 设计规范页">
+<title>轻账 · 高保真原型脚手架</title>
+<!--
+  轻账 · 移动端高保真原型脚手架（P1 UI 设计阶段产物）
+  ────────────────────────────────────────────────────────────
+  · 单文件、零依赖、离线可开：无 CDN / 网络字体 / 外链图片，图标全部内联 SVG
+  · 5 个屏：#home #list #detail #mine #tokens，支持 URL hash 直达
+  · 所有颜色 / 字号 / 间距 / 圆角 / 阴影都来自 :root 上的 CSS 变量，
+    与 templates/design-tokens.json 一一对应；页面里不写死色值
+  · 换肤 = 只改 :root 上的 token；截图脚本见 WORKFLOW.md（Edge headless）
+  · 复用到新项目：改文案与图标、替换「状态演示」里的示例数据即可
+  · 组件锚点：列表四态（#list?state=error）、危险操作二次确认（data-confirm，
+    任何按钮加上该属性即可复用；#detail?confirm=1 可直接截图）、
+    输入框四态（规范页「表单输入框四态」卡片）
+  ────────────────────────────────────────────────────────────
+-->
+<style>
+/* =========================================================
+   1. 设计令牌（唯一取色 / 取字号 / 取间距的地方）
+      与 templates/design-tokens.json 严格一一对应
+   ========================================================= */
+:root {
+  /* —— 颜色：1 个主色 + 中性阶梯 + 各 1 个语义色 —— */
+  --color-primary: #2563EB;        /* 主色：主按钮、选中态、强调图标 */
+  --color-primary-strong: #1D4ED8; /* 主色加深：按下 / 悬停 */
+  --color-primary-weak: #EAF0FE;   /* 主色弱底：图标底、选中底 */
+  --color-on-primary: #FFFFFF;
+  --color-bg: #F4F6FB;             /* 页面背景 */
+  --color-surface: #FFFFFF;        /* 卡片 / 列表 / 弹层表面 */
+  --color-text: #111827;           /* 正文 / 标题 */
+  --color-text-muted: #5B6473;     /* 辅助文字（白底对比度 ≈ 5.6:1） */
+  --color-border: #E5E9F2;         /* 描边 / 分隔线 */
+  --color-success: #0B7A45;
+  --color-success-weak: #E6F5EC;
+  --color-warning: #A45A05;
+  --color-warning-weak: #FDF1DF;
+  --color-danger: #C42B21;
+  --color-danger-weak: #FCEBE9;
+  /* —— 中性/工具色（组件专用，不进主色板） —— */
+  --color-neutral-weak: #EEF1F7;   /* 中性标签底 / 进度轨道 */
+  --color-track: #D7DDE8;          /* 开关关闭态轨道 */
+  --color-disabled-bg: #E9EDF5;    /* 禁用面 */
+  --color-disabled-text: #98A3B6;  /* 禁用文字 */
+  --color-placeholder: #8B95A7;    /* 输入占位符 */
+  --color-icon-muted: #A8B0C0;     /* 弱图标（箭头等） */
+  --color-pressed: #FBFCFE;        /* 卡片按下底色 */
+  --color-skeleton: #E8ECF4;       /* 骨架屏底色 */
+  --color-frame: #10151F;          /* 桌面演示手机外框 */
+  --color-stage: #E8EDF6;          /* 桌面演示背景 */
+  --color-primary-pressed: #DFE8FD;/* 主色弱底按下态 */
+  --color-inverse: rgba(17, 24, 39, .92); /* 反色面（Toast） */
+  --color-on-danger: #FFFFFF;      /* 危险色上的前景色 */
+  --color-danger-strong: #A8231A;  /* 危险色按下态 */
+  --color-scrim: rgba(0, 0, 0, .4);/* 弹层遮罩（40% 黑） */
+
+  /* —— 字号阶梯：只允许这 6 档，正文 16px 起，最小 14px —— */
+  --font-display: 36px;   /* 详情主数值 */
+  --font-h1: 28px;        /* 页面主标题 */
+  --font-metric: 24px;    /* 大号数字（数据卡片） */
+  --font-h2: 20px;        /* 区块标题 / 问候语 */
+  --font-body: 16px;      /* 正文 */
+  --font-caption: 14px;   /* 辅助 / 标签 / 导航文字 */
+
+  /* —— 间距：8pt 栅格（4 为半档） —— */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  /* —— 圆角：只 3 档 + 胶囊 —— */
+  --radius-sm: 8px;   /* 小元素：图标底、标签块 */
+  --radius-md: 12px;  /* 卡片 / 列表 / 输入框 */
+  --radius-lg: 20px;  /* 按钮 / 大容器 / 详情主信息卡 */
+  --radius-full: 999px;
+
+  /* —— 阴影：只 3 档 —— */
+  --shadow-1: 0 1px 2px rgba(17, 24, 39, .05), 0 1px 4px rgba(17, 24, 39, .04);
+  --shadow-2: 0 4px 14px -4px rgba(17, 24, 39, .12), 0 2px 6px rgba(17, 24, 39, .05);
+  --shadow-3: 0 16px 40px -12px rgba(17, 24, 39, .25), 0 4px 12px rgba(17, 24, 39, .07);
+
+  /* —— 布局尺寸 —— */
+  --page-x: 16px;          /* 屏幕左右内边距 */
+  --statusbar-h: 44px;
+  --tabbar-h: 76px;
+  --actionbar-h: 84px;
+  --tap-min: 44px;         /* 最小触控目标 */
+
+  /* —— 动效：150–250ms，服务理解 —— */
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --ease-standard: cubic-bezier(.2, .7, .3, 1);
+}
+
+/* =========================================================
+   2. 重置 + 覆盖浏览器默认控件（不做这条，“丑”是必然的）
+   ========================================================= */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Roboto, Arial, sans-serif;
+  font-size: var(--font-body);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-stage);
+  background-image:
+    radial-gradient(900px 520px at 18% -8%, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(760px 440px at 92% 112%, rgba(255, 255, 255, .45) 0%, rgba(255, 255, 255, 0) 70%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+/* 原生控件一律重写：字体、边框、外观、内边距 */
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  letter-spacing: inherit;
+}
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+a { color: inherit; }
+input::placeholder, textarea::placeholder { color: var(--color-placeholder); opacity: 1; }
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button { -webkit-appearance: none; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+/* 只给读屏和 a11y 用的可见性隐藏（搜索框有可见 label） */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+/* =========================================================
+   3. 手机外壳（桌面居中展示；窄屏全屏铺满便于截图）
+   ========================================================= */
+.stage {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-4);
+}
+.device {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 390px;
+  height: 844px;
+  overflow: hidden;
+  background: var(--color-bg);
+  border-radius: 44px;
+  box-shadow:
+    0 0 0 12px var(--color-frame),
+    0 0 0 13px rgba(255, 255, 255, .07),
+    0 40px 80px -24px rgba(15, 23, 42, .55);
+  isolation: isolate;
+}
+/* 桌面演示时模拟灵动岛；真机截图（≤430px）隐藏 */
+@media (min-width: 431px) {
+  .device::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 98px;
+    height: 26px;
+    border-radius: var(--radius-full);
+    background: var(--color-frame);
+    z-index: 30;
+  }
+}
+.stage-caption {
+  font-size: var(--font-caption);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* 状态栏（模拟安全区） */
+.statusbar {
+  flex: none;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--statusbar-h);
+  padding: 0 24px 0 28px;
+  color: var(--color-text);
+  font-size: var(--font-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+}
+.statusbar__icons { display: flex; align-items: center; gap: 6px; }
+.statusbar__icons svg { display: block; }
+
+/* 屏容器 */
+.screens { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+
+/* =========================================================
+   4. 屏切换：200ms 透明度 + 位移，不做生硬闪烁
+   ========================================================= */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition:
+    opacity var(--dur-base) var(--ease-standard),
+    transform var(--dur-base) var(--ease-standard),
+    visibility 0s linear var(--dur-base);
+}
+.screen[data-screen="detail"] { transform: translateX(28px); }
+.screen.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+/* 首屏与位移动画期间的骨架不动画，避免截图截到半透明 */
+.is-booting .screen,
+.is-booting * { transition: none !important; }
+
+.screen__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4) var(--page-x) calc(var(--tabbar-h) + var(--space-5));
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.screen__body::-webkit-scrollbar { width: 0; height: 0; }
+
+/* =========================================================
+   5. 通用组件
+   ========================================================= */
+.icon {
+  display: block;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon--18 { width: 18px; height: 18px; }
+.icon--16 { width: 16px; height: 16px; }
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.page-title {
+  font-size: var(--font-h1);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.page-sub {
+  margin-top: var(--space-1);
+  font-size: var(--font-caption);
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+.eyebrow {
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.screen-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 var(--space-3);
+  min-height: var(--tap-min);
+}
+.section-title { font-size: var(--font-body); font-weight: 600; line-height: 1.4; }
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-1);
+  font-size: var(--font-caption);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+}
+.link-btn:active { color: var(--color-primary); }
+.link-btn .icon { margin-top: 1px; }
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  flex: none;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--dur-fast) var(--ease-standard), background-color var(--dur-fast);
+}
+.icon-btn:active { transform: scale(.94); background: var(--color-bg); }
+.icon-btn--plain { background: transparent; border-color: transparent; box-shadow: none; }
+.icon-btn--plain:active { background: var(--color-neutral-weak); }
+
+/* 按钮：5 态（默认 / 按下 / 悬停演示 / 禁用 / 加载） */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-body);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+.btn:active { transform: translateY(1px); }
+.btn--primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: transparent;
+}
+.btn--primary:active { background: var(--color-primary-strong); box-shadow: none; }
+.btn--secondary { background: var(--color-surface); color: var(--color-text); }
+.btn--secondary:active { background: var(--color-bg); }
+.btn--danger { color: var(--color-danger); }
+.btn--danger-solid {
+  background: var(--color-danger);
+  color: var(--color-on-danger);
+  border-color: transparent;
+}
+.btn--danger-solid:active { background: var(--color-danger-strong); transform: translateY(1px); }
+.btn--block { width: 100%; }
+.btn--sm { min-height: var(--tap-min); padding: 0 var(--space-4); font-size: var(--font-caption); }
+.btn[disabled] {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  border-color: transparent;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn.is-demo-hover { background: var(--color-primary-strong); box-shadow: var(--shadow-2); }
+.btn.is-demo-pressed {
+  background: var(--color-primary-strong);
+  transform: translateY(1px);
+}
+.btn.is-loading { cursor: progress; }
+.spinner {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .35);
+  border-top-color: var(--color-on-primary);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 数字 */
+.metric {
+  font-size: var(--font-metric);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.metric__unit {
+  font-size: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--color-text-muted);
+  margin-right: 2px;
+}
+
+/* 图标底 */
+.tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+}
+.tile .icon { width: 22px; height: 22px; }
+
+/* 标签：语义 4 色 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+.tag--success { background: var(--color-success-weak); color: var(--color-success); }
+.tag--warning { background: var(--color-warning-weak); color: var(--color-warning); }
+.tag--neutral { background: var(--color-neutral-weak); color: var(--color-text-muted); }
+
+/* 列表行 */
+.rows { padding: 0; overflow: hidden; }
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 68px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  color: inherit;
+  transition: background-color var(--dur-fast);
+}
+.row + .row { border-top: 1px solid var(--color-border); }
+.row:active { background: var(--color-bg); }
+.row__main { flex: 1; min-width: 0; }
+.row__title { display: block; font-size: var(--font-body); font-weight: 600; line-height: 1.35; }
+.row__sub { display: block; margin-top: 2px; font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); }
+.row__amount {
+  font-size: var(--font-body);
+  font-weight: 600;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.amount--in { color: var(--color-success); }
+
+/* Toast：操作后有结果反馈 */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--tabbar-h) + var(--space-4));
+  z-index: 40;
+  max-width: calc(100% - 48px);
+  padding: 10px var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-inverse);
+  color: var(--color-on-primary);
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: var(--shadow-3);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
+}
+.toast.is-show { opacity: 1; transform: translate(-50%, 0); }
+
+/* =========================================================
+   5b. 弹层：遮罩 40% 黑 + 底部 Sheet（圆角 20）
+       供 data-confirm 危险操作二次确认复用
+   ========================================================= */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: var(--color-scrim);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-standard), visibility 0s linear var(--dur-base);
+}
+.scrim.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  padding: var(--space-2) var(--page-x) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  background: var(--color-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-3);
+  transform: translateY(100%);
+  visibility: hidden;
+  transition:
+    transform var(--dur-base) var(--ease-standard),
+    visibility 0s linear var(--dur-base);
+}
+.sheet.is-open { transform: translateY(0); visibility: visible; transition-delay: 0s; }
+.sheet:focus { outline: none; }
+.sheet__grabber {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+.sheet__title { font-size: var(--font-h2); line-height: 1.3; font-weight: 600; }
+.sheet__desc {
+  margin-top: var(--space-2);
+  font-size: var(--font-caption);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.sheet__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+.sheet__actions .btn { flex: 1; min-width: 0; }
+
+/* =========================================================
+   6. 底部 Tab Bar（4 tab，触控 ≥44，选中态主色 + 指示条）
+   ========================================================= */
+.tabbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, .94);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-top: 1px solid var(--color-border);
+  transition: opacity var(--dur-fast) ease, visibility 0s;
+}
+.device[data-screen="detail"] .tabbar {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) ease, visibility 0s linear var(--dur-fast);
+}
+.tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 56px;
+  padding-top: 6px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--color-text-muted);
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-fast) ease;
+}
+.tab:active { background: var(--color-neutral-weak); }
+.tab__indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 18px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--color-primary);
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity var(--dur-fast) ease;
+}
+.tab__label { font-size: var(--font-caption); line-height: 1.3; font-weight: 500; }
+.tab.is-active { color: var(--color-primary); }
+.tab.is-active .tab__label { font-weight: 600; }
+.tab.is-active .tab__indicator { opacity: 1; }
+
+/* =========================================================
+   7. 首页
+   ========================================================= */
+.home-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.greeting {
+  margin-top: var(--space-1);
+  font-size: var(--font-h1);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.stat { padding: var(--space-4); }
+.stat__label {
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+.stat .metric { margin: var(--space-1) 0 var(--space-2); }
+.stat__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.stat__foot .icon { width: 14px; height: 14px; }
+.stat__foot--warning { color: var(--color-warning); }
+.stat__foot--success { color: var(--color-success); }
+
+.quick {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+.quick__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: var(--space-1) 0;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+}
+.quick__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  transition: transform var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) ease;
+}
+.quick__item:active .quick__icon { transform: scale(.92); background: var(--color-primary-pressed); }
+.quick__label { font-size: var(--font-caption); line-height: 1.4; font-weight: 500; }
+
+/* =========================================================
+   8. 列表页
+   ========================================================= */
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 48px;
+  margin-top: var(--space-4);
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  color: var(--color-text-muted);
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
+}
+.search__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  font-size: var(--font-body);
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+}
+.search__input:focus { outline: none; }
+
+.chips {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.chip {
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-caption);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast);
+}
+.chip.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+.chip:active { transform: translateY(1px); }
+
+/* 状态演示分段控件（评审用，可切换 默认/空态/加载/错误） */
+.demo { margin-top: var(--space-4); }
+.demo__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.demo__label { font-size: var(--font-caption); font-weight: 600; }
+.demo__hint { font-size: var(--font-caption); color: var(--color-text-muted); }
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+.seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-caption);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: background-color var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.seg.is-active {
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.seg:active { background: var(--color-bg); }
+
+.bill-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.bill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  color: inherit;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) ease, background-color var(--dur-fast);
+}
+.bill:active { transform: scale(.985); background: var(--color-pressed); }
+.bill__main { flex: 1; min-width: 0; }
+.bill__title { display: block; font-size: var(--font-body); font-weight: 600; line-height: 1.35; }
+.bill__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+.bill__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  flex: none;
+}
+.bill__amount {
+  font-size: var(--font-body);
+  font-weight: 600;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 空 / 加载 / 错误 三态 */
+.state-panel {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 380px;
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+}
+.bill-area[data-state="empty"] .bill-list,
+.bill-area[data-state="loading"] .bill-list,
+.bill-area[data-state="error"] .bill-list { display: none; }
+.bill-area[data-state="empty"] .state-empty,
+.bill-area[data-state="loading"] .state-loading,
+.bill-area[data-state="error"] .state-error { display: flex; }
+.state-panel__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow-1);
+}
+.state-panel__icon--danger { background: var(--color-danger-weak); color: var(--color-danger); }
+.state-panel__title { font-size: var(--font-body); font-weight: 600; }
+.state-panel__desc {
+  max-width: 240px;
+  font-size: var(--font-caption);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.state-panel .btn { margin-top: var(--space-3); }
+
+/* 骨架屏：呼吸感，不闪烁 */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-skeleton);
+  border-radius: var(--radius-sm);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .72), rgba(255, 255, 255, 0));
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+.skel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+.skel__tile { width: 44px; height: 44px; flex: none; border-radius: var(--radius-sm); }
+.skel__lines { flex: 1; display: flex; flex-direction: column; gap: var(--space-2); }
+.skel__line { height: 14px; border-radius: 4px; }
+.skel__line--sub { height: 12px; }
+.skel__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  flex: none;
+}
+.state-loading {
+  gap: var(--space-3);
+  justify-content: flex-start;
+  min-height: 0;
+  margin-top: var(--space-4);
+  padding: 0;
+}
+.state-loading .skel { width: 100%; }
+
+/* =========================================================
+   9. 详情页
+   ========================================================= */
+.appbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 60px;
+  padding: var(--space-2) var(--space-3);
+}
+.appbar__title {
+  flex: 1;
+  text-align: center;
+  font-size: var(--font-h2);
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.screen[data-screen="detail"] .screen__body {
+  padding: var(--space-3) var(--page-x) calc(var(--actionbar-h) + var(--space-4));
+}
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+.hero__tile {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--space-1);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+}
+.hero__tile .icon { width: 26px; height: 26px; }
+.hero__amount {
+  font-size: var(--font-display);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hero__amount .unit {
+  margin-right: 2px;
+  font-size: var(--font-h2);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--color-text-muted);
+}
+.hero__name { font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); }
+.hero .tag { margin-top: var(--space-1); }
+
+.kv { margin-top: var(--space-4); padding: 0; overflow: hidden; }.kv__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 56px;
+  padding: var(--space-3) var(--space-4);
+}
+.kv__row + .kv__row { border-top: 1px solid var(--color-border); }
+.kv__key { flex: none; font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); }
+.kv__val {
+  min-width: 0;
+  text-align: right;
+  font-size: var(--font-body);
+  font-weight: 500;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.synced {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  font-size: var(--font-caption);
+  color: var(--color-success);
+}
+
+/* 分类预算进度（详情页补充信息，演示进度条组件） */
+.budget {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+}
+.budget__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.budget__title { font-size: var(--font-body); font-weight: 600; }
+.budget__pct {
+  font-size: var(--font-caption);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.progress {
+  height: 8px;
+  margin: var(--space-3) 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-neutral-weak);
+  overflow: hidden;
+}
+.progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+}
+.budget__foot {
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.actionbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--page-x) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, .95);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--color-border);
+}
+.actionbar .btn--secondary { flex: none; width: 96px; }
+.actionbar .btn--primary { flex: 1; }
+
+/* =========================================================
+   10. 我的
+   ========================================================= */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  box-shadow: var(--shadow-2);
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-h2);
+  font-weight: 600;
+  letter-spacing: 0;
+  box-shadow: 0 0 0 4px var(--color-primary-weak);
+}
+.profile__main { flex: 1; min-width: 0; }
+.profile__name { font-size: var(--font-h2); line-height: 1.3; font-weight: 600; }
+.profile__sub { margin-top: 2px; font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); }
+
+.settings { margin-top: var(--space-4); padding: 0; overflow: hidden; }
+.setting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  color: inherit;
+  transition: background-color var(--dur-fast);
+}
+.setting + .setting { border-top: 1px solid var(--color-border); }
+button.setting:active { background: var(--color-bg); }
+.setting__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+.setting__label { flex: 1; min-width: 0; font-size: var(--font-body); }
+.setting__value {
+  font-size: var(--font-caption);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.setting__chev { color: var(--color-icon-muted); }
+.version {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--font-caption);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* 开关（原生 checkbox 重写，触控区 44px 高） */
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  width: 48px;
+  height: var(--tap-min);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.switch__track {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-track);
+  transition: background-color var(--dur-fast) ease;
+}
+.switch__track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+.switch input:checked + .switch__track { background: var(--color-primary); }
+.switch input:checked + .switch__track::after { transform: translateX(20px); }
+.switch input:focus-visible + .switch__track { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+
+/* =========================================================
+   11. 设计规范页（token 可视化）
+   ========================================================= */
+.spec-block {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+.spec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.spec-title { font-size: var(--font-body); line-height: 1.4; font-weight: 600; }
+.spec-note { font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); }
+
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+.swatch { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.swatch__chip {
+  display: block;
+  width: 100%;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+.swatch__name { font-size: var(--font-caption); line-height: 1.4; font-weight: 600; }
+.swatch__hex {
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.type-list { display: flex; flex-direction: column; }
+.type-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+.type-item__sample { min-width: 0; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.type-item__meta { flex: none; font-size: var(--font-caption); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+.space-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+}
+.space-item { display: flex; flex-direction: column; gap: 3px; }
+.space-item__meta { font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.space-item__bar {
+  display: block;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  opacity: .85;
+}
+
+.radius-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.radius-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); }
+.radius-item__box {
+  display: block;
+  width: 100%;
+  height: 44px;
+  background: var(--color-primary-weak);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+.radius-item__meta { font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); }
+
+.shadow-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.shadow-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.shadow-item__box {
+  display: block;
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.shadow-item__meta { font-size: var(--font-caption); line-height: 1.4; color: var(--color-text-muted); }
+
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.btn-grid .btn { min-height: var(--tap-min); padding: 0 var(--space-3); font-size: var(--font-caption); }
+.btn-grid .btn--wide { grid-column: 1 / -1; }
+
+/* 表单输入框四态 */
+.form-demos { display: flex; flex-direction: column; gap: var(--space-4); }
+.field { display: flex; flex-direction: column; gap: var(--space-2); }
+.field__label { font-size: var(--font-caption); line-height: 1.4; font-weight: 600; }
+.field__input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--space-4);
+  font-size: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.field__input:focus { outline: none; }
+.field:focus-within .field__input,
+.field--focus .field__input {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
+}
+.field--error .field__input { border-color: var(--color-danger); }
+.field--error .field__input:focus { box-shadow: 0 0 0 3px rgba(196, 43, 33, .16); }
+.field--disabled .field__label { color: var(--color-disabled-text); }
+.field__input:disabled {
+  background: var(--color-bg);
+  color: var(--color-disabled-text);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+.field__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  color: var(--color-danger);
+}
+.field__hint {
+  font-size: var(--font-caption);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.spec-foot {
+  margin-top: var(--space-4);
+  padding: 0 var(--space-1);
+  font-size: var(--font-caption);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* =========================================================
+   12. 适配：≤430px 全屏铺满（截图就是干净手机屏）
+   ========================================================= */
+@media (max-width: 430px) {
+  body { background: var(--color-bg); background-image: none; }
+  .stage { display: block; padding: 0; min-height: 100vh; min-height: 100dvh; }
+  .device {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .stage-caption { display: none; }
+}
+
+/* =========================================================
+   13. 减少动效偏好
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- 内联 SVG 图标集（无外链、无 emoji，同一套线性风格 24×24 / 1.75） -->
+<svg class="sprite" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.6V19a1.5 1.5 0 0 0 1.5 1.5h3V15h4v5.5h3a1.5 1.5 0 0 0 1.5-1.5V9.6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8.5 6.5h11"/><path d="M8.5 12h11"/><path d="M8.5 17.5h11"/><path d="M4.5 6.5h.01"/><path d="M4.5 12h.01"/><path d="M4.5 17.5h.01"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.75 20a7.25 7.25 0 0 1 14.5 0"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M3.5 7.5h9"/><circle cx="16.5" cy="7.5" r="2.5"/><path d="M19 7.5h1.5"/><path d="M3.5 16.5H5"/><circle cx="7.5" cy="16.5" r="2.5"/><path d="M10 16.5h10.5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 0 0-12 0c0 6.5-2.5 7.5-2.5 7.5h17S18 15 18 8.5Z"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8.5v7"/><path d="M8.5 12h7"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8.5h7"/><path d="M8.5 12.5h7"/><path d="M8.5 16.5h4"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-pie" viewBox="0 0 24 24"><path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4-4"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M7 12h10"/><path d="M10 17.5h4"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m14.5 5.5-7 6.5 7 6.5"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9.5 5.5 7 6.5-7 6.5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M2.5 4h2.2l2.2 10.4a1.6 1.6 0 0 0 1.6 1.3h8a1.6 1.6 0 0 0 1.6-1.3L20.5 8H6"/><circle cx="9.5" cy="19.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="17.5" cy="19.5" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16.5v-4l2.3-5h9.4l2.3 5v4"/><path d="M5 16.5h14"/><circle cx="7.8" cy="17" r="1.7"/><circle cx="16.2" cy="17" r="1.7"/><path d="M9.5 12.5h5"/></symbol>
+  <symbol id="i-house" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.6V19a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9.6"/><path d="M10 20.5v-5h4v5"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v4.7h4.7"/></symbol>
+  <symbol id="i-trend-up" viewBox="0 0 24 24"><path d="m4 16.5 5.5-5.5 3.5 3.5L20 7.5"/><path d="M14.5 7.5H20v5.5"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.8-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.8 20.9 19a1.2 1.2 0 0 1-1 1.8H4.1a1.2 1.2 0 0 1-1-1.8L12 3.8Z"/><path d="M12 9.5v4.5"/><path d="M12 17.4h.01"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 18.2V6.5a1.5 1.5 0 0 1 1.5-1.5h4l2 2.5h6.5a1.5 1.5 0 0 1 1.5 1.5v1"/><path d="M3.5 18.2 6 11.2h15l-2.4 7a1.5 1.5 0 0 1-1.4 1H4.9a1.5 1.5 0 0 1-1.4-1Z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3.5v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 20.5h15"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v14.5H6.5A2.5 2.5 0 0 0 4 20V5.5Z"/><path d="M6.5 17.5H19"/><path d="M8.5 7.5h6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.5v5"/><path d="M12 7.8h.01"/></symbol>
+</svg>
+
+<div class="stage">
+  <div class="device" id="app" data-screen="home">
+
+    <!-- 模拟状态栏（顶部安全区） -->
+    <div class="statusbar" aria-hidden="true">
+      <span class="statusbar__time">9:41</span>
+      <span class="statusbar__icons">
+        <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="2.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".32"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1.2 4.2a10 10 0 0 1 13.6 0"/><path d="M3.6 6.8a6.6 6.6 0 0 1 8.8 0"/><path d="M6 9.3a3.2 3.2 0 0 1 4 0"/></svg>
+        <svg width="26" height="12" viewBox="0 0 26 12" aria-hidden="true"><rect x="1" y="1" width="20" height="10" rx="3" fill="none" stroke="currentColor" stroke-opacity=".38"/><rect x="3.2" y="3.2" width="14.6" height="5.6" rx="1.6" fill="currentColor"/><path d="M23 4.2v3.6a2 2 0 0 0 0-3.6Z" fill="currentColor" opacity=".38"/></svg>
+      </span>
+    </div>
+
+    <main class="screens">
+
+      <!-- ═══════════ 屏 1 · 首页 ═══════════ -->
+      <section class="screen" data-screen="home" aria-labelledby="home-title">
+        <div class="screen__body">
+
+          <div class="home-head">
+            <div>
+              <p class="eyebrow">11 月 1 日 · 周六</p>
+              <h1 class="greeting" id="home-title">早上好，阿禾</h1>
+            </div>
+            <button class="icon-btn" type="button" aria-label="通知" data-toast="原型演示：通知中心（P2 接入）">
+              <svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg>
+            </button>
+          </div>
+
+          <!-- 2 个数据卡片：大号数字 + 小标签 -->
+          <div class="stat-grid">
+            <article class="card stat">
+              <p class="stat__label">本月支出</p>
+              <p class="metric"><span class="metric__unit">¥</span>3,286.50</p>
+              <p class="stat__foot stat__foot--warning">
+                <svg class="icon" aria-hidden="true"><use href="#i-trend-up"/></svg><span>+12.4% 较上月</span>
+              </p>
+            </article>
+            <article class="card stat">
+              <p class="stat__label">本月结余</p>
+              <p class="metric"><span class="metric__unit">¥</span>5,713.50</p>
+              <p class="stat__foot stat__foot--success">
+                <svg class="icon" aria-hidden="true"><use href="#i-trend-up"/></svg><span>+8.2% 较上月</span>
+              </p>
+            </article>
+          </div>
+
+          <!-- 快捷入口宫格（4 个） -->
+          <nav class="quick" aria-label="快捷入口">
+            <button class="quick__item" type="button" data-toast="原型演示：记一笔表单（P2 接入）">
+              <span class="quick__icon"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span>
+              <span class="quick__label">记一笔</span>
+            </button>
+            <button class="quick__item" type="button" data-link="list">
+              <span class="quick__icon"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg></span>
+              <span class="quick__label">账单</span>
+            </button>
+            <button class="quick__item" type="button" data-toast="原型演示：预算页（P2 接入）">
+              <span class="quick__icon"><svg class="icon" aria-hidden="true"><use href="#i-target"/></svg></span>
+              <span class="quick__label">预算</span>
+            </button>
+            <button class="quick__item" type="button" data-toast="原型演示：报表页（P2 接入）">
+              <span class="quick__icon"><svg class="icon" aria-hidden="true"><use href="#i-pie"/></svg></span>
+              <span class="quick__label">报表</span>
+            </button>
+          </nav>
+
+          <!-- 最近记录（3 条） -->
+          <div class="section-head">
+            <h2 class="section-title">最近记录</h2>
+            <button class="link-btn" type="button" data-link="list">
+              全部<svg class="icon icon--16" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+            </button>
+          </div>
+          <div class="card rows">
+            <button class="row" type="button" data-link="detail">
+              <span class="tile"><svg class="icon" aria-hidden="true"><use href="#i-cart"/></svg></span>
+              <span class="row__main">
+                <span class="row__title">超市采购</span>
+                <span class="row__sub">餐饮 · 今天 18:24</span>
+              </span>
+              <span class="row__amount">-¥128.60</span>
+            </button>
+            <button class="row" type="button" data-link="detail">
+              <span class="tile"><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg></span>
+              <span class="row__main">
+                <span class="row__title">地铁通勤</span>
+                <span class="row__sub">交通 · 今天 08:12</span>
+              </span>
+              <span class="row__amount">-¥6.00</span>
+            </button>
+            <button class="row" type="button" data-link="detail">
+              <span class="tile"><svg class="icon" aria-hidden="true"><use href="#i-rotate"/></svg></span>
+              <span class="row__main">
+                <span class="row__title">月度工资</span>
+                <span class="row__sub">收入 · 昨天 09:30</span>
+              </span>
+              <span class="row__amount amount--in">+¥8,000.00</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══════════ 屏 2 · 列表（含四态演示） ═══════════ -->
+      <section class="screen" data-screen="list" aria-labelledby="list-title">
+        <div class="screen__body">
+
+          <div class="screen-head">
+            <div>
+              <h1 class="page-title" id="list-title">账单</h1>
+              <p class="page-sub">11 月 · 共 28 笔记录</p>
+            </div>
+            <button class="icon-btn" type="button" aria-label="筛选" data-toast="原型演示：高级筛选（P2 接入）">
+              <svg class="icon" aria-hidden="true"><use href="#i-filter"/></svg>
+            </button>
+          </div>
+
+          <!-- 搜索框 -->
+          <div class="search">
+            <svg class="icon icon--18" aria-hidden="true"><use href="#i-search"/></svg>
+            <label class="visually-hidden" for="bill-search">搜索账单</label>
+            <input class="search__input" id="bill-search" type="search" placeholder="搜索分类、备注或金额" autocomplete="off">
+          </div>
+
+          <!-- 筛选 chips（3 个） -->
+          <div class="chips" role="group" aria-label="账单类型筛选">
+            <button class="chip is-active" type="button" data-filter="all" aria-pressed="true">全部</button>
+            <button class="chip" type="button" data-filter="expense" aria-pressed="false">支出</button>
+            <button class="chip" type="button" data-filter="income" aria-pressed="false">收入</button>
+          </div>
+
+          <!-- 状态演示：默认 / 空态 / 加载（骨架屏）/ 错误（可重试） -->
+          <div class="demo">
+            <div class="demo__head">
+              <span class="demo__label">状态演示</span>
+              <span class="demo__hint">评审用 · 切换列表状态</span>
+            </div>
+            <div class="segmented" role="group" aria-label="列表状态演示">
+              <button class="seg is-active" type="button" data-state="default" aria-pressed="true">默认</button>
+              <button class="seg" type="button" data-state="empty" aria-pressed="false">空态</button>
+              <button class="seg" type="button" data-state="loading" aria-pressed="false">加载</button>
+              <button class="seg" type="button" data-state="error" aria-pressed="false">错误</button>
+            </div>
+          </div>
+
+          <div class="bill-area" id="bill-area" data-state="default">
+
+            <!-- 默认态：4 条账单卡片 -->
+            <div class="bill-list">
+              <button class="bill" type="button" data-kind="expense" data-link="detail">
+                <span class="tile"><svg class="icon" aria-hidden="true"><use href="#i-cart"/></svg></span>
+                <span class="bill__main">
+                  <span class="bill__title">超市采购</span>
+                  <span class="bill__sub">餐饮 · 今天 18:24</span>
+                </span>
+                <span class="bill__right">
+                  <span class="bill__amount">-¥128.60</span>
+                  <span class="tag tag--success">已入账</span>
+                </span>
+              </button>
+
+              <button class="bill" type="button" data-kind="expense" data-link="detail">
+                <span class="tile"><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg></span>
+                <span class="bill__main">
+                  <span class="bill__title">打车回家</span>
+                  <span class="bill__sub">交通 · 今天 21:05</span>
+                </span>
+                <span class="bill__right">
+                  <span class="bill__amount">-¥24.00</span>
+                  <span class="tag tag--warning">待确认</span>
+                </span>
+              </button>
+
+              <button class="bill" type="button" data-kind="expense" data-link="detail">
+                <span class="tile"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span>
+                <span class="bill__main">
+                  <span class="bill__title">房租续签</span>
+                  <span class="bill__sub">居住 · 10 月 31 日</span>
+                </span>
+                <span class="bill__right">
+                  <span class="bill__amount">-¥2,400.00</span>
+                  <span class="tag tag--success">已入账</span>
+                </span>
+              </button>
+
+              <button class="bill" type="button" data-kind="income" data-link="detail">
+                <span class="tile"><svg class="icon" aria-hidden="true"><use href="#i-rotate"/></svg></span>
+                <span class="bill__main">
+                  <span class="bill__title">订单退款</span>
+                  <span class="bill__sub">购物 · 10 月 30 日</span>
+                </span>
+                <span class="bill__right">
+                  <span class="bill__amount amount--in">+¥199.00</span>
+                  <span class="tag tag--neutral">已退回</span>
+                </span>
+              </button>
+            </div>
+
+            <!-- 空态：图标 + 说明 + 可点引导 -->
+            <div class="state-panel state-empty" role="status">
+              <span class="state-panel__icon"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg></span>
+              <p class="state-panel__title">还没有符合条件的账单</p>
+              <p class="state-panel__desc">换个筛选条件，或点搜索框重新查找</p>
+              <button class="btn btn--secondary btn--sm" type="button" data-toast="原型演示：已清除筛选">清除筛选</button>
+            </div>
+
+            <!-- 加载态：骨架屏 -->
+            <div class="state-panel state-loading" aria-hidden="true">
+              <div class="skel">
+                <span class="skeleton skel__tile"></span>
+                <span class="skel__lines"><span class="skeleton skel__line" style="width:56%"></span><span class="skeleton skel__line skel__line--sub" style="width:38%"></span></span>
+                <span class="skel__right"><span class="skeleton skel__line" style="width:64px"></span><span class="skeleton skel__line skel__line--sub" style="width:44px"></span></span>
+              </div>
+              <div class="skel">
+                <span class="skeleton skel__tile"></span>
+                <span class="skel__lines"><span class="skeleton skel__line" style="width:48%"></span><span class="skeleton skel__line skel__line--sub" style="width:44%"></span></span>
+                <span class="skel__right"><span class="skeleton skel__line" style="width:56px"></span><span class="skeleton skel__line skel__line--sub" style="width:44px"></span></span>
+              </div>
+              <div class="skel">
+                <span class="skeleton skel__tile"></span>
+                <span class="skel__lines"><span class="skeleton skel__line" style="width:62%"></span><span class="skeleton skel__line skel__line--sub" style="width:34%"></span></span>
+                <span class="skel__right"><span class="skeleton skel__line" style="width:72px"></span><span class="skeleton skel__line skel__line--sub" style="width:44px"></span></span>
+              </div>
+              <div class="skel">
+                <span class="skeleton skel__tile"></span>
+                <span class="skel__lines"><span class="skeleton skel__line" style="width:42%"></span><span class="skeleton skel__line skel__line--sub" style="width:50%"></span></span>
+                <span class="skel__right"><span class="skeleton skel__line" style="width:60px"></span><span class="skeleton skel__line skel__line--sub" style="width:44px"></span></span>
+              </div>
+            </div>
+
+            <!-- 错误态：说人话 + 可重试 -->
+            <div class="state-panel state-error" role="alert">
+              <span class="state-panel__icon state-panel__icon--danger"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg></span>
+              <p class="state-panel__title">加载失败</p>
+              <p class="state-panel__desc">网络开小差了，请检查连接后重试</p>
+              <button class="btn btn--primary btn--sm" id="retry-btn" type="button">
+                <svg class="icon icon--18" aria-hidden="true"><use href="#i-refresh"/></svg>重新加载
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ 屏 3 · 详情 ═══════════ -->
+      <section class="screen" data-screen="detail" aria-labelledby="detail-title">
+        <div class="appbar">
+          <button class="icon-btn icon-btn--plain" type="button" aria-label="返回账单列表" data-link="list">
+            <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+          </button>
+          <h1 class="appbar__title" id="detail-title">账单详情</h1>
+          <button class="icon-btn icon-btn--plain" type="button" aria-label="更多操作" data-toast="原型演示：更多操作">
+            <svg class="icon" aria-hidden="true"><use href="#i-more"/></svg>
+          </button>
+        </div>
+
+        <div class="screen__body">
+          <!-- 主信息卡：大数值 + 名称 + 状态 -->
+          <section class="hero">
+            <span class="hero__tile"><svg class="icon" aria-hidden="true"><use href="#i-cart"/></svg></span>
+            <p class="hero__amount"><span class="unit">¥</span>128.60</p>
+            <p class="hero__name">餐饮 · 超市采购</p>
+            <span class="tag tag--success">已入账</span>
+          </section>
+
+          <!-- 明细：3 行键值对 -->
+          <div class="card kv">
+            <div class="kv__row"><span class="kv__key">支付方式</span><span class="kv__val">微信支付</span></div>
+            <div class="kv__row"><span class="kv__key">交易时间</span><span class="kv__val">2026-11-01 18:24</span></div>
+            <div class="kv__row"><span class="kv__key">备注</span><span class="kv__val">周末囤货，共 8 件</span></div>
+          </div>
+
+          <!-- 补充信息：分类预算进度（进度条组件示例） -->
+          <section class="card budget">
+            <div class="budget__head">
+              <span class="budget__title">本月餐饮预算</span>
+              <span class="budget__pct">已用 68%</span>
+            </div>
+            <div class="progress" role="img" aria-label="本月餐饮预算已用 68%">
+              <span class="progress__fill" style="width:68%"></span>
+            </div>
+            <p class="budget__foot">¥3,286.50 / ¥4,800.00</p>
+          </section>
+
+          <p class="synced">
+            <svg class="icon icon--16" aria-hidden="true"><use href="#i-check-circle"/></svg>已自动同步至云端
+          </p>
+        </div>
+
+        <!-- 底部固定操作区：次要按钮 + 主操作（删除走 data-confirm 二次确认） -->
+        <div class="actionbar">
+          <button class="btn btn--secondary btn--danger" type="button"
+            aria-haspopup="dialog"
+            data-confirm
+            data-confirm-title="删除这笔账单？"
+            data-confirm-desc="删除后无法恢复，「超市采购 · ¥128.60」会从账单与统计中一并移除。"
+            data-confirm-ok="删除"
+            data-confirm-danger
+            data-confirm-done="已删除（原型演示）">删除</button>
+          <button class="btn btn--primary" type="button" data-toast="原型演示：编辑账单（P2 接入）">编辑账单</button>
+        </div>
+      </section>
+
+      <!-- ═══════════ 屏 4 · 我的 ═══════════ -->
+      <section class="screen" data-screen="mine" aria-labelledby="mine-title">
+        <div class="screen__body">
+
+          <h1 class="page-title" id="mine-title">我的</h1>
+          <p class="page-sub">账号 · 偏好 · 数据</p>
+
+          <!-- 头像区：首字母圆形头像 -->
+          <section class="card profile">
+            <span class="avatar" aria-hidden="true">禾</span>
+            <div class="profile__main">
+              <p class="profile__name">阿禾</p>
+              <p class="profile__sub">已记账 128 天 · 3 个账本</p>
+            </div>
+            <button class="btn btn--secondary btn--sm" type="button" data-toast="原型演示：编辑资料">编辑</button>
+          </section>
+
+          <!-- 设置列表：2 个开关 + 3 个箭头（共 5 行） -->
+          <div class="card settings">
+            <div class="setting">
+              <span class="setting__icon"><svg class="icon icon--18" aria-hidden="true"><use href="#i-bell"/></svg></span>
+              <span class="setting__label">每日记账提醒</span>
+              <label class="switch">
+                <input type="checkbox" checked data-name="每日记账提醒" aria-label="每日记账提醒">
+                <span class="switch__track" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="setting">
+              <span class="setting__icon"><svg class="icon icon--18" aria-hidden="true"><use href="#i-refresh"/></svg></span>
+              <span class="setting__label">自动同步云端</span>
+              <label class="switch">
+                <input type="checkbox" checked data-name="自动同步云端" aria-label="自动同步云端">
+                <span class="switch__track" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card settings">
+            <button class="setting" type="button" data-toast="原型演示：账本管理">
+              <span class="setting__icon"><svg class="icon icon--18" aria-hidden="true"><use href="#i-book"/></svg></span>
+              <span class="setting__label">账本管理</span>
+              <svg class="icon icon--18 setting__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+            </button>
+            <button class="setting" type="button" data-toast="原型演示：导出账单">
+              <span class="setting__icon"><svg class="icon icon--18" aria-hidden="true"><use href="#i-download"/></svg></span>
+              <span class="setting__label">导出账单</span>
+              <svg class="icon icon--18 setting__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+            </button>
+            <button class="setting" type="button" data-toast="原型演示：关于轻账">
+              <span class="setting__icon"><svg class="icon icon--18" aria-hidden="true"><use href="#i-info"/></svg></span>
+              <span class="setting__label">关于轻账</span>
+              <span class="setting__value">v1.2.0</span>
+              <svg class="icon icon--18 setting__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+            </button>
+          </div>
+
+          <p class="version">轻账 v1.2.0 · 高保真原型模板</p>
+        </div>
+      </section>
+
+      <!-- ═══════════ 屏 5 · 设计规范（token 可视化） ═══════════ -->
+      <section class="screen" data-screen="tokens" aria-labelledby="tokens-title">
+        <div class="screen__body">
+
+          <h1 class="page-title" id="tokens-title">设计规范</h1>
+          <p class="page-sub">design-tokens.json · 与 CSS 变量一一对应</p>
+
+          <!-- 色板：每个色块 + 名称 + hex -->
+          <section class="spec-block">
+            <div class="spec-head">
+              <h2 class="spec-title">颜色</h2>
+              <span class="spec-note">9 个语义色 · 1 个主色</span>
+            </div>
+            <div class="swatch-grid">
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-primary)"></span><span class="swatch__name">主色</span><span class="swatch__hex">#2563EB</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-bg)"></span><span class="swatch__name">背景</span><span class="swatch__hex">#F4F6FB</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-surface)"></span><span class="swatch__name">卡片</span><span class="swatch__hex">#FFFFFF</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-text)"></span><span class="swatch__name">正文</span><span class="swatch__hex">#111827</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-text-muted)"></span><span class="swatch__name">辅助</span><span class="swatch__hex">#5B6473</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-border)"></span><span class="swatch__name">描边</span><span class="swatch__hex">#E5E9F2</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-success)"></span><span class="swatch__name">成功</span><span class="swatch__hex">#0B7A45</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-warning)"></span><span class="swatch__name">警告</span><span class="swatch__hex">#A45A05</span></div>
+              <div class="swatch"><span class="swatch__chip" style="background:var(--color-danger)"></span><span class="swatch__name">危险</span><span class="swatch__hex">#C42B21</span></div>
+            </div>
+          </section>
+
+          <!-- 字号阶梯：标 px -->
+          <section class="spec-block">
+            <div class="spec-head">
+              <h2 class="spec-title">字号阶梯</h2>
+              <span class="spec-note">≤5 档 + 数字</span>
+            </div>
+            <div class="type-list">
+              <div class="type-item"><span class="type-item__sample" style="font-size:var(--font-display);font-weight:700;letter-spacing:-.03em">Aa 轻账</span><span class="type-item__meta">Display 36px</span></div>
+              <div class="type-item"><span class="type-item__sample" style="font-size:var(--font-h1);font-weight:700;letter-spacing:-.02em">页面标题</span><span class="type-item__meta">H1 28px</span></div>
+              <div class="type-item"><span class="type-item__sample" style="font-size:var(--font-metric);font-weight:700;font-variant-numeric:tabular-nums">3,286.50</span><span class="type-item__meta">Metric 24px</span></div>
+              <div class="type-item"><span class="type-item__sample" style="font-size:var(--font-h2);font-weight:600">区块标题</span><span class="type-item__meta">H2 20px</span></div>
+              <div class="type-item"><span class="type-item__sample" style="font-size:var(--font-body)">正文内容，行高 1.5</span><span class="type-item__meta">Body 16px</span></div>
+              <div class="type-item"><span class="type-item__sample" style="font-size:var(--font-caption);color:var(--color-text-muted)">辅助说明文字</span><span class="type-item__meta">Caption 14px</span></div>
+            </div>
+          </section>
+
+          <!-- 间距示例 -->
+          <section class="spec-block">
+            <div class="spec-head">
+              <h2 class="spec-title">间距</h2>
+              <span class="spec-note">8pt 栅格</span>
+            </div>
+            <div class="space-grid">
+              <div class="space-item"><span class="space-item__meta">space-1 · 4px</span><span class="space-item__bar" style="width:calc(var(--space-1) * 1.6)"></span></div>
+              <div class="space-item"><span class="space-item__meta">space-2 · 8px</span><span class="space-item__bar" style="width:calc(var(--space-2) * 1.6)"></span></div>
+              <div class="space-item"><span class="space-item__meta">space-3 · 12px</span><span class="space-item__bar" style="width:calc(var(--space-3) * 1.6)"></span></div>
+              <div class="space-item"><span class="space-item__meta">space-4 · 16px</span><span class="space-item__bar" style="width:calc(var(--space-4) * 1.6)"></span></div>
+              <div class="space-item"><span class="space-item__meta">space-5 · 24px</span><span class="space-item__bar" style="width:calc(var(--space-5) * 1.6)"></span></div>
+              <div class="space-item"><span class="space-item__meta">space-6 · 32px</span><span class="space-item__bar" style="width:calc(var(--space-6) * 1.6)"></span></div>
+              <div class="space-item"><span class="space-item__meta">space-7 · 40px</span><span class="space-item__bar" style="width:calc(var(--space-7) * 1.6)"></span></div>
+              <div class="space-item"><span class="space-item__meta">space-8 · 48px</span><span class="space-item__bar" style="width:calc(var(--space-8) * 1.6)"></span></div>
+            </div>
+          </section>
+
+          <!-- 圆角 3 档 -->
+          <section class="spec-block">
+            <div class="spec-head">
+              <h2 class="spec-title">圆角</h2>
+              <span class="spec-note">3 档 + 胶囊</span>
+            </div>
+            <div class="radius-row">
+              <div class="radius-item"><span class="radius-item__box" style="border-radius:var(--radius-sm)"></span><span class="radius-item__meta">sm · 8px</span></div>
+              <div class="radius-item"><span class="radius-item__box" style="border-radius:var(--radius-md)"></span><span class="radius-item__meta">md · 12px</span></div>
+              <div class="radius-item"><span class="radius-item__box" style="border-radius:var(--radius-lg)"></span><span class="radius-item__meta">lg · 20px</span></div>
+            </div>
+          </section>
+
+          <!-- 阴影 3 档 -->
+          <section class="spec-block">
+            <div class="spec-head">
+              <h2 class="spec-title">阴影</h2>
+              <span class="spec-note">卡片 / 悬浮 / 弹层</span>
+            </div>
+            <div class="shadow-row">
+              <div class="shadow-item"><span class="shadow-item__box" style="box-shadow:var(--shadow-1)"></span><span class="shadow-item__meta">shadow-1</span></div>
+              <div class="shadow-item"><span class="shadow-item__box" style="box-shadow:var(--shadow-2)"></span><span class="shadow-item__meta">shadow-2</span></div>
+              <div class="shadow-item"><span class="shadow-item__box" style="box-shadow:var(--shadow-3)"></span><span class="shadow-item__meta">shadow-3</span></div>
+            </div>
+          </section>
+
+          <!-- 按钮 5 态 -->
+          <section class="spec-block">
+            <div class="spec-head">
+              <h2 class="spec-title">按钮五态</h2>
+              <span class="spec-note">手机无 hover，按下即反馈</span>
+            </div>
+            <div class="btn-grid">
+              <button class="btn btn--primary" type="button" data-toast="原型演示：默认态">默认</button>
+              <button class="btn btn--primary is-demo-hover" type="button" data-toast="原型演示：悬停态（仅桌面）">悬停</button>
+              <button class="btn btn--primary is-demo-pressed" type="button" data-toast="原型演示：按下态">按下</button>
+              <button class="btn btn--primary" type="button" disabled>禁用</button>
+              <button class="btn btn--primary is-loading btn--wide" type="button" aria-busy="true" data-toast="原型演示：加载中">
+                <span class="spinner" aria-hidden="true"></span>加载中
+              </button>
+            </div>
+          </section>
+
+          <!-- 表单输入框四态（默认 / 聚焦 / 校验失败 / 禁用） -->
+          <section class="spec-block">
+            <div class="spec-head">
+              <h2 class="spec-title">表单输入框四态</h2>
+              <span class="spec-note">错误文案在字段下方</span>
+            </div>
+            <div class="form-demos">
+              <div class="field">
+                <label class="field__label" for="field-default">备注</label>
+                <input class="field__input" id="field-default" type="text" placeholder="例如：周末囤货，共 8 件">
+              </div>
+              <div class="field field--focus">
+                <label class="field__label" for="field-focus">金额</label>
+                <input class="field__input" id="field-focus" type="text" value="128.60" inputmode="decimal" aria-describedby="field-focus-hint">
+                <p class="field__hint" id="field-focus-hint">聚焦：描边主色 + 3px 主色光晕</p>
+              </div>
+              <div class="field field--error">
+                <label class="field__label" for="field-error">手机号</label>
+                <input class="field__input" id="field-error" type="tel" value="138 0013" aria-invalid="true" aria-describedby="field-error-msg">
+                <p class="field__error" id="field-error-msg">
+                  <svg class="icon icon--16" aria-hidden="true"><use href="#i-alert"/></svg>请输入 11 位手机号
+                </p>
+              </div>
+              <div class="field field--disabled">
+                <label class="field__label" for="field-disabled">账本</label>
+                <input class="field__input" id="field-disabled" type="text" value="个人账本（默认）" disabled>
+              </div>
+            </div>
+          </section>
+
+          <p class="spec-foot">换肤只改 :root 上的 token<br>页面内不写死颜色、字号、间距</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 底部 Tab Bar：4 个 tab，图标 + 文字，选中态主色 + 指示条 -->
+    <nav class="tabbar" aria-label="主导航">
+      <a class="tab is-active" href="#home" data-tab="home">
+        <span class="tab__indicator" aria-hidden="true"></span>
+        <svg class="icon tab__icon" aria-hidden="true"><use href="#i-home"/></svg>
+        <span class="tab__label">首页</span>
+      </a>
+      <a class="tab" href="#list" data-tab="list">
+        <span class="tab__indicator" aria-hidden="true"></span>
+        <svg class="icon tab__icon" aria-hidden="true"><use href="#i-list"/></svg>
+        <span class="tab__label">列表</span>
+      </a>
+      <a class="tab" href="#mine" data-tab="mine">
+        <span class="tab__indicator" aria-hidden="true"></span>
+        <svg class="icon tab__icon" aria-hidden="true"><use href="#i-user"/></svg>
+        <span class="tab__label">我的</span>
+      </a>
+      <a class="tab" href="#tokens" data-tab="tokens">
+        <span class="tab__indicator" aria-hidden="true"></span>
+        <svg class="icon tab__icon" aria-hidden="true"><use href="#i-sliders"/></svg>
+        <span class="tab__label">规范</span>
+      </a>
+    </nav>
+
+    <!-- 操作反馈 -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- 危险操作二次确认（可复用 data-confirm 组件）
+         用法：<button data-confirm
+                       data-confirm-title="删除这笔账单？"
+                       data-confirm-desc="删除后无法恢复。"
+                       data-confirm-ok="删除"
+                       data-confirm-danger
+                       data-confirm-done="已删除（原型演示）">删除</button>
+         不带 data-confirm-danger 时主按钮自动变为主色，可当普通确认框用。 -->
+    <div class="scrim" id="confirm-scrim" aria-hidden="true"></div>
+    <div class="sheet" id="confirm-sheet" role="dialog" aria-modal="true" tabindex="-1"
+      aria-labelledby="confirm-title" aria-describedby="confirm-desc" aria-hidden="true">
+      <div class="sheet__grabber" aria-hidden="true"></div>
+      <h2 class="sheet__title" id="confirm-title">删除这笔账单？</h2>
+      <p class="sheet__desc" id="confirm-desc">删除后无法恢复。</p>
+      <div class="sheet__actions">
+        <button class="btn btn--secondary" type="button" data-confirm-cancel>取消</button>
+        <button class="btn btn--danger-solid" type="button" data-confirm-ok>删除</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="stage-caption">轻账 · 高保真原型脚手架 390 × 844 · 底部导航切换 / 点账单进详情 / 列表可切四态 / 删除有二次确认</p>
+</div>
+
+<noscript>
+  <style>
+    .screen[data-screen="home"] { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
+  </style>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var app = document.getElementById('app');
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+
+  /* hash 路由：#home / #list / #detail / #mine / #tokens */
+  var ROUTES = ['home', 'list', 'detail', 'mine', 'tokens'];
+  var TAB_OF = { home: 'home', list: 'list', detail: 'list', mine: 'mine', tokens: 'tokens' };
+
+  function currentRoute() {
+    var h = (location.hash || '').replace(/^#\/?/, '').split('?')[0];
+    return ROUTES.indexOf(h) > -1 ? h : 'home';
+  }
+
+  function render() {
+    var route = currentRoute();
+    closeConfirm(false);
+    app.dataset.screen = route;
+
+    var screens = app.querySelectorAll('.screen');
+    for (var i = 0; i < screens.length; i++) {
+      var screen = screens[i];
+      var on = screen.dataset.screen === route;
+      screen.classList.toggle('is-active', on);
+      if (on) { screen.removeAttribute('inert'); } else { screen.setAttribute('inert', ''); }
+    }
+
+    var activeTab = TAB_OF[route];
+    var tabs = app.querySelectorAll('.tab');
+    for (var j = 0; j < tabs.length; j++) {
+      var tab = tabs[j];
+      var tabOn = tab.dataset.tab === activeTab;
+      tab.classList.toggle('is-active', tabOn);
+      if (tabOn) { tab.setAttribute('aria-current', 'page'); } else { tab.removeAttribute('aria-current'); }
+    }
+
+    var body = app.querySelector('.screen[data-screen="' + route + '"] .screen__body');
+    if (body) { body.scrollTop = 0; }
+    applyStateFromHash();
+    applyConfirmFromHash();
+    hideToast();
+  }
+
+  /* 操作反馈 */
+  function showToast(message) {
+    toastEl.textContent = message;
+    toastEl.classList.add('is-show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 1800);
+  }
+  function hideToast() {
+    clearTimeout(toastTimer);
+    toastEl.classList.remove('is-show');
+  }
+
+  /* ——— 危险操作二次确认（data-confirm 复用组件） ———
+     用法：<button data-confirm
+                   data-confirm-title="删除这笔账单？"
+                   data-confirm-desc="删除后无法恢复。"
+                   data-confirm-ok="删除"
+                   data-confirm-danger
+                   data-confirm-done="已删除（原型演示）">删除</button>
+     Esc / 点遮罩 / 取消 关闭；确认后给反馈并关闭；关闭后焦点归还触发按钮。 */
+  var sheetEl = document.getElementById('confirm-sheet');
+  var scrimEl = document.getElementById('confirm-scrim');
+  var confirmOk = sheetEl.querySelector('[data-confirm-ok]');
+  var confirmCancel = sheetEl.querySelector('[data-confirm-cancel]');
+  var confirmTitle = document.getElementById('confirm-title');
+  var confirmDesc = document.getElementById('confirm-desc');
+  var confirmDoneText = '操作已完成';
+  var confirmReturnFocus = null;
+
+  function openConfirm(trigger) {
+    confirmReturnFocus = trigger;
+    confirmTitle.textContent = trigger.getAttribute('data-confirm-title') || '确认执行该操作？';
+    var desc = trigger.getAttribute('data-confirm-desc') || '';
+    confirmDesc.textContent = desc;
+    confirmDesc.hidden = !desc;
+    confirmOk.textContent = trigger.getAttribute('data-confirm-ok') || '确认';
+    confirmDoneText = trigger.getAttribute('data-confirm-done') || '操作已完成';
+    var isDanger = trigger.hasAttribute('data-confirm-danger');
+    confirmOk.classList.toggle('btn--danger-solid', isDanger);
+    confirmOk.classList.toggle('btn--primary', !isDanger);
+    scrimEl.classList.add('is-open');
+    sheetEl.classList.add('is-open');
+    scrimEl.setAttribute('aria-hidden', 'false');
+    sheetEl.setAttribute('aria-hidden', 'false');
+    sheetEl.focus({ preventScroll: true });
+  }
+
+  function closeConfirm(restoreFocus) {
+    if (!sheetEl.classList.contains('is-open')) { return; }
+    scrimEl.classList.remove('is-open');
+    sheetEl.classList.remove('is-open');
+    scrimEl.setAttribute('aria-hidden', 'true');
+    sheetEl.setAttribute('aria-hidden', 'true');
+    if (restoreFocus !== false && confirmReturnFocus && typeof confirmReturnFocus.focus === 'function') {
+      confirmReturnFocus.focus({ preventScroll: true });
+    }
+    confirmReturnFocus = null;
+  }
+
+  confirmCancel.addEventListener('click', function () { closeConfirm(); });
+  scrimEl.addEventListener('click', function () { closeConfirm(); });
+  confirmOk.addEventListener('click', function () {
+    closeConfirm();
+    showToast(confirmDoneText);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeConfirm(); }
+  });
+
+  /* 列表四态 */
+  function setListState(state) {
+    var area = document.getElementById('bill-area');
+    if (!area) { return; }
+    area.dataset.state = state;
+    var segs = app.querySelectorAll('.seg');
+    for (var i = 0; i < segs.length; i++) {
+      var on = segs[i].dataset.state === state;
+      segs[i].classList.toggle('is-active', on);
+      segs[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+
+  /* 支持 #list?state=empty|loading|error 直达某一态，方便截图与评审 */
+  function applyStateFromHash() {
+    var query = (location.hash || '').split('?')[1] || '';
+    var match = /(?:^|&)state=([a-z]+)/.exec(query);
+    if (match && /^(default|empty|loading|error)$/.test(match[1])) {
+      setListState(match[1]);
+    }
+  }
+
+  /* 支持 #detail?confirm=1 直接打开删除确认，方便截图与评审 */
+  function applyConfirmFromHash() {
+    var query = (location.hash || '').split('?')[1] || '';
+    if (/(?:^|&)confirm=1/.test(query)) {
+      var trigger = app.querySelector('.screen[data-screen="detail"] [data-confirm]');
+      if (trigger) { openConfirm(trigger); }
+    }
+  }
+
+  /* 筛选 chips */
+  function setFilter(kind) {
+    var chips = app.querySelectorAll('.chip');
+    for (var i = 0; i < chips.length; i++) {
+      var on = chips[i].dataset.filter === kind;
+      chips[i].classList.toggle('is-active', on);
+      chips[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    var bills = app.querySelectorAll('.bill[data-kind]');
+    for (var j = 0; j < bills.length; j++) {
+      bills[j].hidden = kind !== 'all' && bills[j].dataset.kind !== kind;
+    }
+  }
+
+  /* 事件委托：data-link（路由）/ data-confirm（二次确认）/ data-toast（演示反馈） */
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-link]');
+    if (link) {
+      e.preventDefault();
+      location.hash = link.dataset.link;
+      return;
+    }
+    var confirmTrigger = e.target.closest('[data-confirm]');
+    if (confirmTrigger) {
+      e.preventDefault();
+      openConfirm(confirmTrigger);
+      return;
+    }
+    var t = e.target.closest('[data-toast]');
+    if (t) {
+      e.preventDefault();
+      showToast(t.dataset.toast);
+    }
+  });
+
+  /* 列表状态分段控件 */
+  app.addEventListener('click', function (e) {
+    var seg = e.target.closest('.seg');
+    if (seg) { setListState(seg.dataset.state); }
+    var chip = e.target.closest('.chip');
+    if (chip) { setFilter(chip.dataset.filter); }
+    var retry = e.target.closest('#retry-btn');
+    if (retry) {
+      setListState('default');
+      showToast('已重新加载');
+    }
+  });
+
+  /* 开关：切换后有反馈 */
+  var switches = app.querySelectorAll('.switch input');
+  for (var k = 0; k < switches.length; k++) {
+    switches[k].addEventListener('change', function () {
+      var name = this.dataset.name || '设置';
+      showToast(name + (this.checked ? ' 已开启' : ' 已关闭'));
+    });
+  }
+
+  window.addEventListener('hashchange', render);
+
+  /* 首屏：先渲染，再启用过渡，避免截图截到动画中间态 */
+  render();
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      document.documentElement.classList.remove('is-booting');
+    });
+  });
+})();
+</script>
+</body>
+</html>

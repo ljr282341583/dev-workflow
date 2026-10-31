@@ -1,0 +1,336 @@
+{
+  "name": "轻账 · 高保真原型设计令牌",
+  "version": "1.0.0",
+  "updated": "2026-11-01",
+  "description": "P1 UI 设计阶段的唯一取色 / 取字号 / 取间距来源。templates/prototype/index.html 的 :root 与此文件严格一一对应；前端实现（P2）只允许引用这里的 token，禁止裸写 hex / 字号 / 间距。",
+  "source": "templates/prototype/index.html → :root",
+  "scope": "移动端 App（390 × 844），单主色 + 中性阶梯 + 语义色各 1",
+  "color": {
+    "primary": {
+      "cssVar": "--color-primary",
+      "value": "#2563EB",
+      "description": "主色。主按钮、选中态、激活图标、强调文字。全站只有这一个强调色。"
+    },
+    "primary-strong": {
+      "cssVar": "--color-primary-strong",
+      "value": "#1D4ED8",
+      "description": "主色加深。用于按下 / 悬停 / 加载等叠加态。"
+    },
+    "primary-weak": {
+      "cssVar": "--color-primary-weak",
+      "value": "#EAF0FE",
+      "description": "主色弱底。图标底、选中项底、Tag 与图表底色。"
+    },
+    "on-primary": {
+      "cssVar": "--color-on-primary",
+      "value": "#FFFFFF",
+      "description": "主色上的前景色。白字对比度约 5.2:1。"
+    },
+    "bg": {
+      "cssVar": "--color-bg",
+      "value": "#F4F6FB",
+      "description": "页面背景。卡片用 surface 与它形成层次，不靠重阴影。"
+    },
+    "surface": {
+      "cssVar": "--color-surface",
+      "value": "#FFFFFF",
+      "description": "卡片、列表、弹层表面。"
+    },
+    "text": {
+      "cssVar": "--color-text",
+      "value": "#111827",
+      "description": "标题与正文。白底对比度约 17:1。"
+    },
+    "text-muted": {
+      "cssVar": "--color-text-muted",
+      "value": "#5B6473",
+      "description": "辅助文字、时间、说明。白底对比度约 5.6:1，满足 4.5:1。"
+    },
+    "border": {
+      "cssVar": "--color-border",
+      "value": "#E5E9F2",
+      "description": "分隔线、输入框描边、卡片弱边界。"
+    },
+    "success": {
+      "cssVar": "--color-success",
+      "value": "#0B7A45",
+      "description": "成功/收入/已入账。只用这一种绿。"
+    },
+    "success-weak": {
+      "cssVar": "--color-success-weak",
+      "value": "#E6F5EC",
+      "description": "成功状态标签底色。"
+    },
+    "warning": {
+      "cssVar": "--color-warning",
+      "value": "#A45A05",
+      "description": "警告/待确认/超支提醒。只用这一种琥珀色。"
+    },
+    "warning-weak": {
+      "cssVar": "--color-warning-weak",
+      "value": "#FDF1DF",
+      "description": "警告状态标签底色。"
+    },
+    "danger": {
+      "cssVar": "--color-danger",
+      "value": "#C42B21",
+      "description": "危险/删除/失败。只用这一种红，且只出现在破坏性操作与错误态。"
+    },
+    "danger-weak": {
+      "cssVar": "--color-danger-weak",
+      "value": "#FCEBE9",
+      "description": "错误态图标底、危险提示底。"
+    },
+    "neutral-weak": {
+      "cssVar": "--color-neutral-weak",
+      "value": "#EEF1F7",
+      "description": "中性标签底、进度条轨道、无强调的分组底。"
+    },
+    "track": {
+      "cssVar": "--color-track",
+      "value": "#D7DDE8",
+      "description": "开关关闭态轨道。"
+    },
+    "disabled-bg": {
+      "cssVar": "--color-disabled-bg",
+      "value": "#E9EDF5",
+      "description": "禁用按钮 / 禁用控件底面。"
+    },
+    "disabled-text": {
+      "cssVar": "--color-disabled-text",
+      "value": "#98A3B6",
+      "description": "禁用态文字。信息可辨但不引导点击。"
+    },
+    "placeholder": {
+      "cssVar": "--color-placeholder",
+      "value": "#8B95A7",
+      "description": "输入框占位符。注意：占位符不能替代可见 label。"
+    },
+    "icon-muted": {
+      "cssVar": "--color-icon-muted",
+      "value": "#A8B0C0",
+      "description": "弱图标：右箭头、装饰性图标。不承载唯一信息。"
+    },
+    "pressed": {
+      "cssVar": "--color-pressed",
+      "value": "#FBFCFE",
+      "description": "卡片 / 列表行按下时的底色反馈。"
+    },
+    "skeleton": {
+      "cssVar": "--color-skeleton",
+      "value": "#E8ECF4",
+      "description": "骨架屏占位块底色。"
+    },
+    "frame": {
+      "cssVar": "--color-frame",
+      "value": "#10151F",
+      "description": "仅桌面演示用：手机外框与灵动岛。不参与 App 界面配色。"
+    },
+    "stage": {
+      "cssVar": "--color-stage",
+      "value": "#E8EDF6",
+      "description": "仅桌面演示用：手机框外的舞台背景。"
+    },
+    "primary-pressed": {
+      "cssVar": "--color-primary-pressed",
+      "value": "#DFE8FD",
+      "description": "主色弱底元素按下时的加深色（快捷入口、选中底）。"
+    },
+    "inverse": {
+      "cssVar": "--color-inverse",
+      "value": "rgba(17, 24, 39, .92)",
+      "description": "反色面：Toast 背景。"
+    },
+    "on-danger": {
+      "cssVar": "--color-on-danger",
+      "value": "#FFFFFF",
+      "description": "危险色上的前景色。危险主按钮文字，白字对比度约 5.2:1。"
+    },
+    "danger-strong": {
+      "cssVar": "--color-danger-strong",
+      "value": "#A8231A",
+      "description": "危险色按下态（删除确认等破坏性主操作）。"
+    },
+    "scrim": {
+      "cssVar": "--color-scrim",
+      "value": "rgba(0, 0, 0, .4)",
+      "description": "弹层遮罩：40% 黑。盖在页面内容上仍能看清层级，但不可误触背景。"
+    }
+  },
+  "font": {
+    "display": {
+      "cssVar": "--font-display",
+      "value": "36px",
+      "lineHeight": 1.1,
+      "weight": 700,
+      "description": "详情页主数值等唯一焦点数字。"
+    },
+    "h1": {
+      "cssVar": "--font-h1",
+      "value": "28px",
+      "lineHeight": 1.25,
+      "weight": 700,
+      "description": "页面主标题（首页问候、屏标题）。"
+    },
+    "metric": {
+      "cssVar": "--font-metric",
+      "value": "24px",
+      "lineHeight": 1.25,
+      "weight": 700,
+      "description": "数据卡片的大号数字。必须配 tabular-nums。"
+    },
+    "h2": {
+      "cssVar": "--font-h2",
+      "value": "20px",
+      "lineHeight": 1.3,
+      "weight": 600,
+      "description": "区块标题、AppBar 标题、用户名字。"
+    },
+    "body": {
+      "cssVar": "--font-body",
+      "value": "16px",
+      "lineHeight": 1.5,
+      "weight": 400,
+      "description": "正文、列表标题、按钮文字。移动端正文最小档。"
+    },
+    "caption": {
+      "cssVar": "--font-caption",
+      "value": "14px",
+      "lineHeight": 1.45,
+      "weight": 400,
+      "description": "辅助文字、标签、时间、底部导航文字。全站最小字号，不允许更小。"
+    }
+  },
+  "space": {
+    "space-1": { "cssVar": "--space-1", "value": "4px", "description": "半档：图标与文字、Tag 内间距。" },
+    "space-2": { "cssVar": "--space-2", "value": "8px", "description": "元素内间距、chip 间距、图标底内边距。" },
+    "space-3": { "cssVar": "--space-3", "value": "12px", "description": "卡片间距、列表行内边距。" },
+    "space-4": { "cssVar": "--space-4", "value": "16px", "description": "页面左右内边距、卡片内边距。" },
+    "space-5": { "cssVar": "--space-5", "value": "24px", "description": "区块内大留白、首屏头与内容间距。" },
+    "space-6": { "cssVar": "--space-6", "value": "32px", "description": "空/错误态上下留白。" },
+    "space-7": { "cssVar": "--space-7", "value": "40px", "description": "大区块分隔。" },
+    "space-8": { "cssVar": "--space-8", "value": "48px", "description": "页面级留白、底部安全留白补足。" }
+  },
+  "radius": {
+    "sm": {
+      "cssVar": "--radius-sm",
+      "value": "8px",
+      "description": "小元素：图标底、骨架块、分段控件内块。"
+    },
+    "md": {
+      "cssVar": "--radius-md",
+      "value": "12px",
+      "description": "卡片、列表、输入框、图标底（44px 尺寸）。"
+    },
+    "lg": {
+      "cssVar": "--radius-lg",
+      "value": "20px",
+      "description": "按钮、大容器、详情主信息卡。"
+    },
+    "full": {
+      "cssVar": "--radius-full",
+      "value": "999px",
+      "description": "胶囊：Tag、Chip、头像、开关、图标按钮。"
+    }
+  },
+  "shadow": {
+    "shadow-1": {
+      "cssVar": "--shadow-1",
+      "value": "0 1px 2px rgba(17, 24, 39, .05), 0 1px 4px rgba(17, 24, 39, .04)",
+      "description": "静置卡片 / 列表行 / 输入框。"
+    },
+    "shadow-2": {
+      "cssVar": "--shadow-2",
+      "value": "0 4px 14px -4px rgba(17, 24, 39, .12), 0 2px 6px rgba(17, 24, 39, .05)",
+      "description": "悬浮层：详情主信息卡、个人资料卡。"
+    },
+    "shadow-3": {
+      "cssVar": "--shadow-3",
+      "value": "0 16px 40px -12px rgba(17, 24, 39, .25), 0 4px 12px rgba(17, 24, 39, .07)",
+      "description": "弹层 / Toast / 遮罩上的浮起层。"
+    }
+  },
+  "layout": {
+    "page-x": { "cssVar": "--page-x", "value": "16px", "description": "屏幕左右内边距，全站统一。" },
+    "statusbar-h": { "cssVar": "--statusbar-h", "value": "44px", "description": "顶部安全区高度（状态栏留白）。" },
+    "tabbar-h": { "cssVar": "--tabbar-h", "value": "76px", "description": "底部导航高度（不含 safe-area-inset-bottom）。" },
+    "actionbar-h": { "cssVar": "--actionbar-h", "value": "84px", "description": "详情页底部固定操作区高度（不含 safe-area）。" },
+    "tap-min": { "cssVar": "--tap-min", "value": "44px", "description": "最小触控目标。图标按钮、Chip、开关、分段控件都按它做热区。" }
+  },
+  "motion": {
+    "dur-fast": { "cssVar": "--dur-fast", "value": "150ms", "description": "按下、颜色、阴影等微反馈。" },
+    "dur-base": { "cssVar": "--dur-base", "value": "200ms", "description": "页面切换、开关滑块、Toast。" },
+    "ease-standard": { "cssVar": "--ease-standard", "value": "cubic-bezier(.2, .7, .3, 1)", "description": "统一缓动。禁止生硬的 linear 页面切换。" }
+  },
+  "rules": [
+    "全站只允许 1 个主色，语义色（成功/警告/危险）各 1 个；不得引入第三种强调色。",
+    "字号只用 font 组里的 6 档；不允许 13px / 15px / 17.5px 这类随手值。",
+    "间距只用 space-1..8（4/8/12/16/24/32/40/48）；相邻元素不允许 6/10/14 这类魔法值。",
+    "圆角只用 radius-sm|md|lg + full；同层级元素必须同档。",
+    "阴影只用 shadow-1|2|3；不允许“这个卡片再重一点”的特例。",
+    "数字一律 font-variant-numeric: tabular-nums，保证列对齐。",
+    "移动端没有 hover：所有可点元素必须有 :active 按下反馈，不能只有 hover 态。",
+    "正文 16px 起，全站最小 14px；触控目标 ≥44×44。"
+  ],
+  "cssVariables": {
+    "--color-primary": "#2563EB",
+    "--color-primary-strong": "#1D4ED8",
+    "--color-primary-weak": "#EAF0FE",
+    "--color-on-primary": "#FFFFFF",
+    "--color-bg": "#F4F6FB",
+    "--color-surface": "#FFFFFF",
+    "--color-text": "#111827",
+    "--color-text-muted": "#5B6473",
+    "--color-border": "#E5E9F2",
+    "--color-success": "#0B7A45",
+    "--color-success-weak": "#E6F5EC",
+    "--color-warning": "#A45A05",
+    "--color-warning-weak": "#FDF1DF",
+    "--color-danger": "#C42B21",
+    "--color-danger-weak": "#FCEBE9",
+    "--color-neutral-weak": "#EEF1F7",
+    "--color-track": "#D7DDE8",
+    "--color-disabled-bg": "#E9EDF5",
+    "--color-disabled-text": "#98A3B6",
+    "--color-placeholder": "#8B95A7",
+    "--color-icon-muted": "#A8B0C0",
+    "--color-pressed": "#FBFCFE",
+    "--color-skeleton": "#E8ECF4",
+    "--color-frame": "#10151F",
+    "--color-stage": "#E8EDF6",
+    "--color-primary-pressed": "#DFE8FD",
+    "--color-inverse": "rgba(17, 24, 39, .92)",
+    "--color-on-danger": "#FFFFFF",
+    "--color-danger-strong": "#A8231A",
+    "--color-scrim": "rgba(0, 0, 0, .4)",
+    "--font-display": "36px",
+    "--font-h1": "28px",
+    "--font-metric": "24px",
+    "--font-h2": "20px",
+    "--font-body": "16px",
+    "--font-caption": "14px",
+    "--space-1": "4px",
+    "--space-2": "8px",
+    "--space-3": "12px",
+    "--space-4": "16px",
+    "--space-5": "24px",
+    "--space-6": "32px",
+    "--space-7": "40px",
+    "--space-8": "48px",
+    "--radius-sm": "8px",
+    "--radius-md": "12px",
+    "--radius-lg": "20px",
+    "--radius-full": "999px",
+    "--shadow-1": "0 1px 2px rgba(17, 24, 39, .05), 0 1px 4px rgba(17, 24, 39, .04)",
+    "--shadow-2": "0 4px 14px -4px rgba(17, 24, 39, .12), 0 2px 6px rgba(17, 24, 39, .05)",
+    "--shadow-3": "0 16px 40px -12px rgba(17, 24, 39, .25), 0 4px 12px rgba(17, 24, 39, .07)",
+    "--page-x": "16px",
+    "--statusbar-h": "44px",
+    "--tabbar-h": "76px",
+    "--actionbar-h": "84px",
+    "--tap-min": "44px",
+    "--dur-fast": "150ms",
+    "--dur-base": "200ms",
+    "--ease-standard": "cubic-bezier(.2, .7, .3, 1)"
+  }
+}
