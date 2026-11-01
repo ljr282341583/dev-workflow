@@ -1,0 +1,7 @@
+# 打包产物（走 GitHub Releases，不进 git）
+dist/
+
+# 本机临时文件
+*.bak-*
+Thumbs.db
+desktop.ini

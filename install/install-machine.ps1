@@ -165,6 +165,8 @@ function Add-WorkspaceSection {
     if ($wsRoot) { $WorkspaceAgents = Join-Path $wsRoot "AGENTS.md" }
   }
 
+  $script:wsAgentsResolved = $WorkspaceAgents
+
   $waMarker = "### 2.6 带界面项目的开发流程"
   $snipFile = Join-Path $PSScriptRoot "workspace-agents-2.6.md"
 
@@ -212,7 +214,8 @@ function Add-WorkspaceSection {
 
 # ---------- 主流程 ----------
 $done = @()
-foreach ($t in (Get-Targets)) {
+$targets = Get-Targets
+foreach ($t in $targets) {
   switch ($t) {
     "dsh" {
       "== DSH =="
@@ -244,9 +247,57 @@ foreach ($t in (Get-Targets)) {
   }
 }
 
+# ---------- 结果自检（给人看的人话结论） ----------
+$checks = @()
+function Add-Check([string]$name, [bool]$ok) { $script:checks += [pscustomobject]@{ Name = $name; Ok = $ok } }
+
+$dshAgents = Join-Path $userHome ".dsh\AGENTS.md"
+$codexAgents = Join-Path $userHome ".codex\AGENTS.md"
+$claudeMd = Join-Path $userHome ".claude\CLAUDE.md"
+
+if ($targets -contains "dsh") {
+  Add-Check "DSH 技能已装" (Test-Path (Join-Path $userHome ".agents\skills\ui-first-dev\SKILL.md"))
+  if (Test-Path $dshAgents) {
+    Add-Check "DSH 全局红线已写入" ((Get-Content $dshAgents -Raw -Encoding UTF8) -match [regex]::Escape($marker))
+  }
+  if ($WorkspaceAgents -eq "none") {
+    Add-Check "工作区 §2.6（按要求跳过）" $true
+  } elseif ($script:wsAgentsResolved) {
+    Add-Check "工作区 §2.6 已接上" ((Test-Path $script:wsAgentsResolved) -and
+      ((Get-Content $script:wsAgentsResolved -Raw -Encoding UTF8) -match "### 2\.6 带界面项目的开发流程"))
+  } else {
+    Add-Check "工作区 §2.6 已接上（未探测到工作区，跳过）" $false
+  }
+}
+
+if (Test-Path (Join-Path $userHome ".codex")) {
+  Add-Check "Codex 技能已装" (Test-Path (Join-Path $userHome ".codex\skills\ui-first-dev\SKILL.md"))
+  if (Test-Path $codexAgents) { Add-Check "Codex 红线已写入" ((Get-Content $codexAgents -Raw -Encoding UTF8) -match [regex]::Escape($marker)) }
+}
+if (Test-Path (Join-Path $userHome ".claude")) {
+  Add-Check "Claude 技能已装" (Test-Path (Join-Path $userHome ".claude\skills\ui-first-dev\SKILL.md"))
+  if (Test-Path $claudeMd) { Add-Check "Claude 红线已写入" ((Get-Content $claudeMd -Raw -Encoding UTF8) -match [regex]::Escape($marker)) }
+}
+
 ""
-"完成。本次目标：$($done -join '；')"
-"验证方式："
-"  1) 对应工具新开会话，问：你有 ui-first-dev 技能吗？"
-"  2) 打开对应的 AGENTS.md / CLAUDE.md，确认包含「$marker」"
-"  3) 说「帮我做个 XXX 的 APK」，第一条回复应是问题（P0）而不是代码"
+"================ 安装结果 ================"
+foreach ($c in $checks) {
+  if ($c.Ok) { "  ✅ $($c.Name)" } else { "  ❌ $($c.Name)" }
+}
+$allOk = ($checks.Count -gt 0) -and (($checks | Where-Object { -not $_.Ok }).Count -eq 0)
+
+""
+if ($allOk) {
+  "  🎉 全部就绪，以后不需要再装。"
+  ""
+  "  现在对 AI 说一句就能用："
+  "     「帮我做个 XXX 的 App」"
+  "  AI 会先问你需求 → 出 2~3 套 UI 方向给你选 → 你点「过」→ 它才开始写代码。"
+  ""
+  "  想自己确认：新开会话问一句「你有 ui-first-dev 技能吗？」"
+} else {
+  "  ⚠️ 上面有 ❌ 项没装上。把这段输出整段复制回给 AI，它能照着修。"
+  "     重试命令（复制即用）："
+  "       powershell -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+}
+"=========================================="

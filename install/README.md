@@ -1,6 +1,15 @@
-# 换机器一键安装（技能 + 红线，支持 DSH / Codex / Claude Code）
+# 换机器安装（三种方式，最省事的两种在前）
 
-本目录是「UI 优先开发流程」的**跨机安装包**：在任意一台新机器上，一条命令就能把流程装好，并覆盖你实际在用的 AI 工具。
+本目录是「UI 优先开发流程」的**跨机安装包**：在任意一台新机器上把流程装好，并覆盖你实际在用的 AI 工具。
+
+| 方式 | 小白要做什么 | 适合 |
+| --- | --- | --- |
+| **① 说一句话** | 对 AI 说"把 https://github.com/ljr282341583/dev-workflow 装到这台电脑" | 有 AI 工具的机器（推荐） |
+| **② 双击** | 下载 [最新安装包](https://github.com/ljr282341583/dev-workflow/releases/latest) → 解压 → 双击 `安装.cmd` | 没网 / 没 git / 不想碰命令 |
+| ③ 命令行 | `powershell -ExecutionPolicy Bypass -File .\install\install-machine.ps1` | 自动化 / 技术向 |
+
+> ① 的详细步骤（给 AI 看）：[`AGENT-INSTALL.md`](AGENT-INSTALL.md)
+> ② 的安装包由 [`打包一键安装.ps1`](打包一键安装.ps1) 生成，根目录自带 `安装.cmd` + `安装说明.txt` + 教程4
 
 ## 装什么（按工具）
 
