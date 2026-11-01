@@ -1,13 +1,16 @@
-# 换机器一键安装（技能 + 全局红线）
+# 换机器一键安装（技能 + 红线，支持 DSH / Codex / Claude Code）
 
-本目录是「UI 优先开发流程」的**跨机安装包**：在任意一台新机器上，一条命令就能把流程装好。
+本目录是「UI 优先开发流程」的**跨机安装包**：在任意一台新机器上，一条命令就能把流程装好，并覆盖你实际在用的 AI 工具。
 
-## 装什么
+## 装什么（按工具）
 
-| 安装项 | 目标位置 | 作用 |
-| --- | --- | --- |
-| 技能 `ui-first-dev` | `%USERPROFILE%\.agents\skills\ui-first-dev\` | DSH 从用户级目录加载技能；任务命中"开发带界面的东西"时自动可用 |
-| 全局红线 | `%USERPROFILE%\.dsh\AGENTS.md` | 每次会话自动加载，强制"先加载技能、先过 UI 审、每门必停" |
+| 工具 | 技能目录 | 红线文件 | 附加 |
+| --- | --- | --- | --- |
+| **DSH** | `%USERPROFILE%\.agents\skills\` | `%USERPROFILE%\.dsh\AGENTS.md` | 还会插工作区 `AGENTS.md` §2.6 |
+| **Codex CLI** | `%USERPROFILE%\.codex\skills\` | `%USERPROFILE%\.codex\AGENTS.md` | — |
+| **Claude Code** | `%USERPROFILE%\.claude\skills\` | `%USERPROFILE%\.claude\CLAUDE.md` | — |
+
+> 没安装的工具（对应目录不存在）会自动跳过，不会凭空造目录。
 
 ## 一条命令
 
@@ -15,8 +18,11 @@
 # 先 clone 规范仓库（私有，需已登录 GitHub）
 git clone https://github.com/ljr282341583/dev-workflow.git "$env:USERPROFILE\dev-workflow"
 
-# 装：技能 + 全局红线 + 工作区级 §2.6（工作区根自动探测，不需要填路径）
+# 装：默认 -Target all，装了哪个工具就装哪个；工作区根自动探测，不用填路径
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workflow\install\install-machine.ps1"
+
+# 只装某一个：-Target dsh | codex | claude
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workflow\install\install-machine.ps1" -Target dsh
 
 # 只看会做什么、不落盘
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workflow\install\install-machine.ps1" -DryRun
@@ -24,7 +30,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workfl
 
 > 装了 PowerShell 7 的机器也可以把 `powershell -NoProfile -ExecutionPolicy Bypass` 换成 `pwsh`（Windows 自带的 5.1 没有 `pwsh` 命令，用上面这行最稳）。
 
-脚本是**幂等**的：技能每次覆盖为仓库里的最新版；红线检测到「## 开发流程红线」标记就跳过；§2.6 检测到标题就跳过；改文件前先自动备份 `*.bak-<时间>`。
+脚本是**幂等**的：技能按 SHA256 判重；红线检测到「## 开发流程红线」标记就跳过；§2.6 检测到标题就跳过；改文件前先自动备份 `*.bak-<时间>`。
 
 ## 工作区根怎么找（不用你填路径）
 
@@ -45,9 +51,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install-machine.ps
 
 | 参数 | 默认 | 说明 |
 | --- | --- | --- |
-| `-SkillTarget` | `%USERPROFILE%\.agents\skills` | 技能安装目录（DSH 用户级技能目录） |
-| `-AgentsFile` | `%USERPROFILE%\.dsh\AGENTS.md` | 要插入红线的全局指令文件 |
-| `-WorkspaceAgents` | `auto` | 工作区根目录 / `AGENTS.md` 路径 / `auto` 自动探测 / `none` 跳过 |
+| `-Target` | `all` | `dsh` / `codex` / `claude` / `all`；只装某个工具时指定它 |
+| `-WorkspaceAgents` | `auto` | 工作区根目录 / `AGENTS.md` 路径 / `auto` 自动探测 / `none` 跳过（仅 DSH 目标用） |
 | `-SpecRoot` | 本仓库根目录 | 红线里"正文与模板"指向的路径（仓库不一定克隆在同一路径） |
 | `-DryRun` | 关 | 只打印计划，不写文件 |
 
@@ -64,9 +69,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install-machine.ps
 
 ## 装完怎么验
 
-1. **技能在不在**：新开一个 DSH 会话，问一句"你有 ui-first-dev 技能吗？"→ 答"有"即成功（DSH 会监视技能目录，通常不用重启）。
-2. **红线在不在**：打开 `%USERPROFILE%\.dsh\AGENTS.md`，应能看到 `## 开发流程红线(有界面的项目一律执行)`。
-3. **工作区级在不在**：工作区根目录的 `AGENTS.md` 里应能看到 `### 2.6 带界面项目的开发流程`。
+1. **技能在不在**：对应工具新开会话，问一句"你有 ui-first-dev 技能吗？"→ 答"有"即成功。
+2. **红线在不在**：打开对应文件，应能看到 `## 开发流程红线(有界面的项目一律执行)`：
+   - DSH：`%USERPROFILE%\.dsh\AGENTS.md`
+   - Codex：`%USERPROFILE%\.codex\AGENTS.md`
+   - Claude Code：`%USERPROFILE%\.claude\CLAUDE.md`
+3. **工作区级在不在**（仅 DSH）：工作区根目录的 `AGENTS.md` 里应能看到 `### 2.6 带界面项目的开发流程`。
 4. **实战验收**：说"帮我做个 XXX 的 APK"，第一条回复应该是**问题**（P0），不是代码。
 
 ## 工作区级红线（为什么它特殊）
@@ -81,6 +89,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install-machine.ps
 ## 卸载
 
 ```powershell
-Remove-Item "$env:USERPROFILE\.agents\skills\ui-first-dev" -Recurse -Force
-# 红线：手动删掉 AGENTS.md 里「## 开发流程红线」那一节（备份文件在 AGENTS.md.bak-*）
+# 技能（按装过的工具删）
+Remove-Item "$env:USERPROFILE\.agents\skills\ui-first-dev" -Recurse -Force   # DSH
+Remove-Item "$env:USERPROFILE\.codex\skills\ui-first-dev"  -Recurse -Force   # Codex
+Remove-Item "$env:USERPROFILE\.claude\skills\ui-first-dev" -Recurse -Force   # Claude
+
+# 红线：手动删掉对应文件里「## 开发流程红线」那一节（备份文件在 *.bak-*）
 ```

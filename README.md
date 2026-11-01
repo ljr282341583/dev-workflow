@@ -73,17 +73,23 @@ P0需求 ──①── P1 UI设计 ──②── P2 前端(mock) ──③�
 
 ## 换机器 / 新电脑怎么装（一条命令）
 
-本规范在本机是"全局生效"的（技能 + `~/.dsh/AGENTS.md` 红线）。换机器时：
+本规范在本机是"全局生效"的。换机器时：
 
 ```powershell
 git clone https://github.com/ljr282341583/dev-workflow.git "$env:USERPROFILE\dev-workflow"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workflow\install\install-machine.ps1"
 ```
 
-脚本会：① 把 `skill/ui-first-dev` 装进 `%USERPROFILE%\.agents\skills\`（DSH 的用户级技能目录）；
-② 把「开发流程红线」插进 `%USERPROFILE%\.dsh\AGENTS.md`；
-③ **自动探测工作区根**，把 §2.6 插进 `workspace/AGENTS.md`（探测顺序：当前目录向上 → 本仓库向上 → DSH 登记表 `storages\workspace.json`）。
-全都幂等、改前自动备份，`-DryRun` 可先看它会找到哪个路径，细节见 [install/README.md](install/README.md)。
+脚本默认 `-Target all`，**装了哪个 AI 工具就装哪个，没装的自动跳过**：
+
+| 工具 | 技能 | 红线 |
+| --- | --- | --- |
+| DSH | `~\.agents\skills\` | `~\.dsh\AGENTS.md` + 工作区 §2.6 |
+| Codex CLI | `~\.codex\skills\` | `~\.codex\AGENTS.md` |
+| Claude Code | `~\.claude\skills\` | `~\.claude\CLAUDE.md` |
+
+另外：**自动探测工作区根**，把 §2.6 插进 `workspace/AGENTS.md`（探测顺序：当前目录向上 → 本仓库向上 → DSH 登记表 `storages\workspace.json`）。
+全都幂等、改前自动备份，`-DryRun` 可先看它会找到哪个路径，`-Target dsh|codex|claude` 可只装一个，细节见 [install/README.md](install/README.md)。
 
 > 工作区根因机器而异，脚本**不写死盘符**；探测不到会打印提示并跳过。要手动指定就传 `-WorkspaceAgents "<工作区根目录>"`，
 > 或者在探测不到时手动贴 [install/workspace-agents-2.6.md](install/workspace-agents-2.6.md) 里的片段。

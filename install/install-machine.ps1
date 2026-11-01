@@ -1,48 +1,42 @@
 ﻿<#
 .SYNOPSIS
-  在任意机器上一条命令装好「UI 优先开发流程」：技能 ui-first-dev + 全局红线 + 工作区级 §2.6。
+  一条命令装好「UI 优先开发流程」：技能 + 红线，支持 DSH / Codex / Claude Code。
 
 .DESCRIPTION
-  1) 技能：把本仓库 skill/ui-first-dev 复制到技能目录（默认 %USERPROFILE%\.agents\skills）。
-  2) 全局红线：把 install/redline-template.md（替换 {{SPEC_ROOT}}）插入全局指令文件
-     （默认 %USERPROFILE%\.dsh\AGENTS.md）。已存在「## 开发流程红线」则跳过。
-  3) 工作区级：找到工作区根（含 AGENTS.md + skills\registry.md 的目录），
-     把 install/workspace-agents-2.6.md 里 BEGIN/END 之间的 §2.6 插进去；
-     已存在该节则跳过。工作区根默认自动探测，也可用 -WorkspaceAgents 指定。
+  按 -Target 安装（默认 all，装了哪个工具就装哪个）：
 
-  工作区根探测顺序：
-    a) -WorkspaceAgents 显式指定的目录/文件
-    b) 当前目录向上逐级
-    c) 本仓库根目录向上逐级
-    d) DSH 登记表 %DSH_HOME%\storages\workspace.json 里登记过的路径
+  | Target | 技能目录                      | 红线文件                            | 额外 |
+  |--------|-------------------------------|-------------------------------------|------|
+  | dsh    | %USERPROFILE%\.agents\skills  | %USERPROFILE%\.dsh\AGENTS.md        | 还会插工作区 §2.6 |
+  | codex  | %USERPROFILE%\.codex\skills   | %USERPROFILE%\.codex\AGENTS.md      | — |
+  | claude | %USERPROFILE%\.claude\skills  | %USERPROFILE%\.claude\CLAUDE.md     | — |
 
-  幂等：重复执行只更新技能；红线与 §2.6 已存在则跳过；改文件前自动备份。
+  未安装的工具（对应目录不存在）自动跳过，不会凭空造目录。
+  幂等：技能按 SHA256 判重；红线/§2.6 按标题判重；改文件前自动备份 *.bak-<时间>。
+  工作区根自动探测（当前目录向上 → 本仓库向上 → DSH 登记表 storages\workspace.json）。
 
-.PARAMETER SkillTarget
-  技能安装目录，默认 %USERPROFILE%\.agents\skills
-
-.PARAMETER AgentsFile
-  全局 AGENTS.md 路径，默认 %USERPROFILE%\.dsh\AGENTS.md
+.PARAMETER Target
+  dsh / codex / claude / all，默认 all
 
 .PARAMETER WorkspaceAgents
-  工作区 AGENTS.md 路径 / 工作区根目录 / "auto"（默认自动探测）/ "none"（跳过这一项）
+  工作区根目录 / AGENTS.md / "auto"（默认自动探测）/ "none"（跳过）
 
 .PARAMETER SpecRoot
-  规范正文所在目录（写进红线的路径），默认本仓库根目录
+  规范正文目录（写进红线的路径），默认本仓库根目录
 
 .PARAMETER DryRun
-  只打印计划，不写任何文件
+  只打印计划，不写文件
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File .\install\install-machine.ps1
 
 .EXAMPLE
-  powershell -ExecutionPolicy Bypass -File .\install\install-machine.ps1 -WorkspaceAgents "D:\my-workspace" -DryRun
+  powershell -ExecutionPolicy Bypass -File .\install\install-machine.ps1 -Target dsh -DryRun
 #>
 [CmdletBinding()]
 param(
-  [string]$SkillTarget = (Join-Path $env:USERPROFILE ".agents\skills"),
-  [string]$AgentsFile = (Join-Path $env:USERPROFILE ".dsh\AGENTS.md"),
+  [ValidateSet("dsh", "codex", "claude", "all")]
+  [string]$Target = "all",
   [string]$WorkspaceAgents = "auto",
   [string]$SpecRoot,
   [switch]$DryRun
@@ -52,17 +46,79 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($SpecRoot)) { $SpecRoot = $repoRoot }
-
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+$userHome = $env:USERPROFILE
+$marker = "## 开发流程红线"
+
+$tpl = Join-Path $PSScriptRoot "redline-template.md"
+if (-not (Test-Path $tpl)) { throw "缺少模板：$tpl" }
+$fragment = (Get-Content $tpl -Raw -Encoding UTF8).Replace("{{SPEC_ROOT}}", $SpecRoot.TrimEnd("\"))
+
+function Get-Targets {
+  if ($Target -eq "all") { return @("dsh", "codex", "claude") }
+  return @($Target)
+}
+
+function Install-Skill([string]$baseDir, [string]$skillSubPath) {
+  $src = Join-Path $repoRoot "skill\ui-first-dev"
+  if (-not (Test-Path (Join-Path $src "SKILL.md"))) {
+    throw "找不到技能源文件：$src\SKILL.md（请在规范仓库内运行本脚本）"
+  }
+  $skillTarget = Join-Path $baseDir $skillSubPath
+  $dst = Join-Path $skillTarget "ui-first-dev"
+  $srcHash = (Get-FileHash (Join-Path $src "SKILL.md") -Algorithm SHA256).Hash
+  $dstFile = Join-Path $dst "SKILL.md"
+  $dstHash = if (Test-Path $dstFile) { (Get-FileHash $dstFile -Algorithm SHA256).Hash } else { $null }
+
+  if ($dstHash -eq $srcHash) {
+    "  技能已是最新，跳过：$dst"
+  } elseif ($DryRun) {
+    "  [dry] 复制技能：$src -> $dst"
+  } else {
+    New-Item -ItemType Directory -Force $skillTarget | Out-Null
+    Copy-Item $src $dst -Recurse -Force
+    "  已安装技能：$dst"
+  }
+}
+
+function Add-Redline([string]$file, [string]$newFileHeader) {
+  if (-not (Test-Path $file)) {
+    if ($DryRun) {
+      "  [dry] 新建并写入红线：$file"
+    } else {
+      New-Item -ItemType Directory -Force (Split-Path $file) | Out-Null
+      [System.IO.File]::WriteAllText($file, ($newFileHeader + "`r`n`r`n" + $fragment), $utf8NoBom)
+      "  已新建并写入红线：$file"
+    }
+    return
+  }
+
+  $content = Get-Content $file -Raw -Encoding UTF8
+  if ($content -match [regex]::Escape($marker)) {
+    "  红线已存在，跳过：$file"
+  } elseif ($DryRun) {
+    "  [dry] 追加红线到：$file"
+  } else {
+    $backup = "$file.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    Copy-Item $file $backup -Force
+    if ($content -match "^#\s") {
+      $nl = $content.IndexOf("`n")
+      if ($nl -lt 0) { $new = $content + "`r`n`r`n" + $fragment }
+      else { $new = $content.Substring(0, $nl + 1) + "`r`n" + $fragment + "`r`n" + $content.Substring($nl + 1) }
+    } else {
+      $new = $fragment + "`r`n`r`n" + $content
+    }
+    [System.IO.File]::WriteAllText($file, $new, $utf8NoBom)
+    "  已追加红线：$file（备份：$backup）"
+  }
+}
 
 function Test-WorkspaceRoot([string]$dir) {
   if ([string]::IsNullOrWhiteSpace($dir)) { return $false }
   if (-not (Test-Path -LiteralPath $dir)) { return $false }
   $agents = Join-Path $dir "AGENTS.md"
   if (-not (Test-Path -LiteralPath $agents)) { return $false }
-  # 强信号一：工作区技能注册表
   if (Test-Path -LiteralPath (Join-Path $dir "skills\registry.md")) { return $true }
-  # 强信号二：AGENTS.md 内容里明确写了"工作区"协作规范
   try {
     $head = Get-Content -LiteralPath $agents -Raw -Encoding UTF8
     if ($head.Length -gt 4000) { $head = $head.Substring(0, 4000) }
@@ -83,9 +139,7 @@ function Resolve-WorkspaceRoot([string[]]$startDirs) {
       $d = $parent
     }
   }
-
-  # DSH 自己的登记表里登记过的路径（不写死盘符，各机器自适应）
-  $dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE ".dsh" }
+  $dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $userHome ".dsh" }
   $reg = Join-Path $dshHome "storages\workspace.json"
   if (Test-Path -LiteralPath $reg) {
     $raw = Get-Content -LiteralPath $reg -Raw -Encoding UTF8
@@ -93,75 +147,13 @@ function Resolve-WorkspaceRoot([string[]]$startDirs) {
       $cands.Add(($m.Groups[1].Value -replace '\\\\', '\'))
     }
   }
-
-  foreach ($c in $cands) {
-    if (Test-WorkspaceRoot $c) { return (Resolve-Path -LiteralPath $c).Path }
-  }
+  foreach ($c in $cands) { if (Test-WorkspaceRoot $c) { return (Resolve-Path -LiteralPath $c).Path } }
   return $null
 }
 
-# ---------- 1) 技能 ----------
-$src = Join-Path $repoRoot "skill\ui-first-dev"
-$dst = Join-Path $SkillTarget "ui-first-dev"
+function Add-WorkspaceSection {
+  if ($WorkspaceAgents -eq "none") { "  工作区级 §2.6：按要求跳过"; return }
 
-if (-not (Test-Path (Join-Path $src "SKILL.md"))) {
-  throw "找不到技能源文件：$src\SKILL.md（请在规范仓库内运行本脚本）"
-}
-
-$srcHash = (Get-FileHash (Join-Path $src "SKILL.md") -Algorithm SHA256).Hash
-$dstFile = Join-Path $dst "SKILL.md"
-$dstHash = if (Test-Path $dstFile) { (Get-FileHash $dstFile -Algorithm SHA256).Hash } else { $null }
-
-if ($dstHash -eq $srcHash) {
-  "技能已是最新，跳过：$dst"
-} elseif ($DryRun) {
-  "[dry] 复制技能：$src -> $dst"
-} else {
-  New-Item -ItemType Directory -Force $SkillTarget | Out-Null
-  Copy-Item $src $dst -Recurse -Force
-  "已安装技能：$dst"
-}
-
-# ---------- 2) 全局红线 ----------
-$tpl = Join-Path $PSScriptRoot "redline-template.md"
-if (-not (Test-Path $tpl)) { throw "缺少模板：$tpl" }
-
-$fragment = (Get-Content $tpl -Raw -Encoding UTF8).Replace("{{SPEC_ROOT}}", $SpecRoot.TrimEnd("\"))
-$marker = "## 开发流程红线"
-
-if (-not (Test-Path $AgentsFile)) {
-  if ($DryRun) {
-    "[dry] 新建并写入全局红线：$AgentsFile"
-  } else {
-    New-Item -ItemType Directory -Force (Split-Path $AgentsFile) | Out-Null
-    [System.IO.File]::WriteAllText($AgentsFile, ("# 全局工作区约定`r`n`r`n" + $fragment), $utf8NoBom)
-    "已新建并写入全局红线：$AgentsFile"
-  }
-} else {
-  $content = Get-Content $AgentsFile -Raw -Encoding UTF8
-  if ($content -match [regex]::Escape($marker)) {
-    "全局红线已存在，跳过：$AgentsFile"
-  } elseif ($DryRun) {
-    "[dry] 追加全局红线到：$AgentsFile"
-  } else {
-    $backup = "$AgentsFile.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
-    Copy-Item $AgentsFile $backup -Force
-    if ($content -match "^#\s") {
-      $nl = $content.IndexOf("`n")
-      if ($nl -lt 0) { $new = $content + "`r`n`r`n" + $fragment }
-      else { $new = $content.Substring(0, $nl + 1) + "`r`n" + $fragment + "`r`n" + $content.Substring($nl + 1) }
-    } else {
-      $new = $fragment + "`r`n`r`n" + $content
-    }
-    [System.IO.File]::WriteAllText($AgentsFile, $new, $utf8NoBom)
-    "已追加全局红线：$AgentsFile（备份：$backup）"
-  }
-}
-
-# ---------- 3) 工作区级 §2.6 ----------
-if ($WorkspaceAgents -eq "none") {
-  "工作区级 §2.6：按要求跳过"
-} else {
   $wsRoot = $null
   if ($WorkspaceAgents -ne "auto") {
     if (Test-Path -LiteralPath $WorkspaceAgents -PathType Container) {
@@ -179,50 +171,82 @@ if ($WorkspaceAgents -eq "none") {
   if (-not (Test-Path -LiteralPath $snipFile)) {
     throw "缺少片段文件：$snipFile"
   } elseif ([string]::IsNullOrWhiteSpace($WorkspaceAgents) -or -not (Test-Path -LiteralPath $WorkspaceAgents)) {
-    "工作区级 §2.6：没探测到工作区 AGENTS.md，跳过。"
-    "  → 知道路径就显式传：-WorkspaceAgents `"<工作区根目录或AGENTS.md>`""
-    "  → 这台机器没有工作区：-WorkspaceAgents none"
+    "  工作区级 §2.6：没探测到工作区 AGENTS.md，跳过。"
+    "    → 知道路径就显式传：-WorkspaceAgents `"<工作区根目录或AGENTS.md>`""
+    "    → 这台机器没有工作区：-WorkspaceAgents none"
+    return
+  }
+
+  if ($wsRoot) { "  工作区根：$wsRoot" } else { "  工作区根：$(Split-Path -Parent $WorkspaceAgents)" }
+  $snipRaw = Get-Content $snipFile -Raw -Encoding UTF8
+  $begin = "<!-- BEGIN-SECTION-2.6 -->"
+  $end = "<!-- END-SECTION-2.6 -->"
+  $b = $snipRaw.IndexOf($begin)
+  $e = $snipRaw.IndexOf($end)
+  if ($b -lt 0 -or $e -le $b) { throw "片段文件缺少 BEGIN/END 标记：$snipFile" }
+  $section = $snipRaw.Substring($b + $begin.Length, $e - $b - $begin.Length).Trim("`r", "`n")
+
+  $wa = Get-Content $WorkspaceAgents -Raw -Encoding UTF8
+  if ($wa -match [regex]::Escape($waMarker)) {
+    "  工作区 §2.6 已存在，跳过：$WorkspaceAgents"
+  } elseif ($DryRun) {
+    "  [dry] 插入 §2.6 到：$WorkspaceAgents"
   } else {
-    if ($wsRoot) { "工作区根：$wsRoot" } else { "工作区根：$(Split-Path -Parent $WorkspaceAgents)" }
-    $snipRaw = Get-Content $snipFile -Raw -Encoding UTF8
-    $begin = "<!-- BEGIN-SECTION-2.6 -->"
-    $end = "<!-- END-SECTION-2.6 -->"
-    $b = $snipRaw.IndexOf($begin)
-    $e = $snipRaw.IndexOf($end)
-    if ($b -lt 0 -or $e -le $b) { throw "片段文件缺少 BEGIN/END 标记：$snipFile" }
-    $section = $snipRaw.Substring($b + $begin.Length, $e - $b - $begin.Length).Trim("`r", "`n")
-
-    $wa = Get-Content $WorkspaceAgents -Raw -Encoding UTF8
-    if ($wa -match [regex]::Escape($waMarker)) {
-      "工作区 §2.6 已存在，跳过：$WorkspaceAgents"
-    } elseif ($DryRun) {
-      "[dry] 插入 §2.6 到：$WorkspaceAgents"
+    $backup2 = "$WorkspaceAgents.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    Copy-Item $WorkspaceAgents $backup2 -Force
+    $lines = $wa -split "`r?`n"
+    $anchor = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match "^##\s*3\.") { $anchor = $i; break } }
+    if ($anchor -lt 0) { for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match "^##\s*7\.") { $anchor = $i; break } } }
+    if ($anchor -le 0) {
+      $new2 = $section + "`r`n`r`n" + $wa
     } else {
-      $backup2 = "$WorkspaceAgents.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
-      Copy-Item $WorkspaceAgents $backup2 -Force
+      $before = ($lines[0..($anchor - 1)] -join "`r`n").TrimEnd()
+      $after = ($lines[$anchor..($lines.Count - 1)] -join "`r`n")
+      $new2 = $before + "`r`n`r`n" + $section + "`r`n`r`n" + $after
+    }
+    [System.IO.File]::WriteAllText($WorkspaceAgents, $new2, $utf8NoBom)
+    "  已插入工作区 §2.6：$WorkspaceAgents（备份：$backup2）"
+  }
+}
 
-      $lines = $wa -split "`r?`n"
-      $anchor = -1
-      for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match "^##\s*3\.") { $anchor = $i; break } }
-      if ($anchor -lt 0) { for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match "^##\s*7\.") { $anchor = $i; break } } }
-
-      if ($anchor -le 0) {
-        $new2 = $section + "`r`n`r`n" + $wa
+# ---------- 主流程 ----------
+$done = @()
+foreach ($t in (Get-Targets)) {
+  switch ($t) {
+    "dsh" {
+      "== DSH =="
+      Install-Skill $userHome ".agents\skills"
+      Add-Redline (Join-Path $userHome ".dsh\AGENTS.md") "# 全局工作区约定"
+      Add-WorkspaceSection
+      $done += "DSH(技能+红线+工作区§2.6)"
+    }
+    "codex" {
+      "== Codex CLI =="
+      if (-not (Test-Path (Join-Path $userHome ".codex"))) {
+        "  未安装（没有 ~\.codex），跳过"
       } else {
-        $before = ($lines[0..($anchor - 1)] -join "`r`n").TrimEnd()
-        $after = ($lines[$anchor..($lines.Count - 1)] -join "`r`n")
-        $new2 = $before + "`r`n`r`n" + $section + "`r`n`r`n" + $after
+        Install-Skill $userHome ".codex\skills"
+        Add-Redline (Join-Path $userHome ".codex\AGENTS.md") "# Global Rules"
+        $done += "Codex(技能+红线)"
       }
-      [System.IO.File]::WriteAllText($WorkspaceAgents, $new2, $utf8NoBom)
-      "已插入工作区 §2.6：$WorkspaceAgents（备份：$backup2）"
+    }
+    "claude" {
+      "== Claude Code =="
+      if (-not (Test-Path (Join-Path $userHome ".claude"))) {
+        "  未安装（没有 ~\.claude），跳过"
+      } else {
+        Install-Skill $userHome ".claude\skills"
+        Add-Redline (Join-Path $userHome ".claude\CLAUDE.md") "# 全局约定（Claude Code）"
+        $done += "Claude(技能+红线)"
+      }
     }
   }
 }
 
-# ---------- 4) 收尾提示 ----------
 ""
-"完成。验证方式："
-"  1) 新开会话问 agent：你有 ui-first-dev 技能吗？（DSH 会监视技能目录，通常无需重启）"
-"  2) 打开 $AgentsFile 确认包含「$marker」"
-"  3) 工作区 AGENTS.md 确认包含「### 2.6 带界面项目的开发流程」"
-"  4) 说「帮我做个 XXX 的 APK」，第一条回复应是问题（P0）而不是代码"
+"完成。本次目标：$($done -join '；')"
+"验证方式："
+"  1) 对应工具新开会话，问：你有 ui-first-dev 技能吗？"
+"  2) 打开对应的 AGENTS.md / CLAUDE.md，确认包含「$marker」"
+"  3) 说「帮我做个 XXX 的 APK」，第一条回复应是问题（P0）而不是代码"
