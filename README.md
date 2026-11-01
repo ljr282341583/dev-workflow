@@ -84,7 +84,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workfl
 ② 把「开发流程红线」插进 `%USERPROFILE%\.dsh\AGENTS.md`（已有则跳过，改前自动备份）。
 幂等、可 `-DryRun` 先看计划，细节见 [install/README.md](install/README.md)。
 
-> 工作区级还有一处：`workspace/AGENTS.md` 的 §2.6「带界面项目的开发流程」；若新机器的 workspace 是另一份，需同步过去。
+> 工作区级那一段（`workspace/AGENTS.md` §2.6）不在本仓库里，因为 workspace 根不是 git 仓库。换机器时可加参数让脚本一起插：
+>
+> ```powershell
+> ... -WorkspaceAgents "G:\ai\deepseek harness output\workspace\AGENTS.md"
+> ```
+>
+> 也可以手动贴 [install/workspace-agents-2.6.md](install/workspace-agents-2.6.md) 里的片段。
 
 ## 常见问题
 

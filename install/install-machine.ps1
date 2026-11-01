@@ -32,6 +32,7 @@
 param(
   [string]$SkillTarget = (Join-Path $env:USERPROFILE ".agents\skills"),
   [string]$AgentsFile = (Join-Path $env:USERPROFILE ".dsh\AGENTS.md"),
+  [string]$WorkspaceAgents,
   [string]$SpecRoot,
   [switch]$DryRun
 )
@@ -101,7 +102,50 @@ if (-not (Test-Path $AgentsFile)) {
   }
 }
 
-# ---------- 3) 收尾提示 ----------
+# ---------- 3) 工作区级红线（可选：-WorkspaceAgents <path>） ----------
+if (-not [string]::IsNullOrWhiteSpace($WorkspaceAgents)) {
+  $waMarker = "### 2.6 带界面项目的开发流程"
+  $snipFile = Join-Path $PSScriptRoot "workspace-agents-2.6.md"
+  if (-not (Test-Path $snipFile)) { throw "缺少片段文件：$snipFile" }
+  if (-not (Test-Path $WorkspaceAgents)) { throw "找不到工作区 AGENTS.md：$WorkspaceAgents" }
+
+  $snipRaw = Get-Content $snipFile -Raw -Encoding UTF8
+  $begin = "<!-- BEGIN-SECTION-2.6 -->"
+  $end = "<!-- END-SECTION-2.6 -->"
+  $b = $snipRaw.IndexOf($begin)
+  $e = $snipRaw.IndexOf($end)
+  if ($b -lt 0 -or $e -le $b) { throw "片段文件缺少 BEGIN/END 标记：$snipFile" }
+  $section = $snipRaw.Substring($b + $begin.Length, $e - $b - $begin.Length).Trim("`r", "`n")
+
+  $wa = Get-Content $WorkspaceAgents -Raw -Encoding UTF8
+  if ($wa -match [regex]::Escape($waMarker)) {
+    "工作区红线已存在，跳过：$WorkspaceAgents"
+  } elseif ($DryRun) {
+    "[dry] 插入 §2.6 到：$WorkspaceAgents"
+  } else {
+    $backup2 = "$WorkspaceAgents.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    Copy-Item $WorkspaceAgents $backup2 -Force
+
+    $lines = $wa -split "`r?`n"
+    $anchor = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match "^##\s*3\.") { $anchor = $i; break } }
+    if ($anchor -lt 0) { for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match "^##\s*7\.") { $anchor = $i; break } } }
+
+    if ($anchor -le 0) {
+      $new2 = $section + "`r`n`r`n" + $wa
+    } else {
+      $before = ($lines[0..($anchor - 1)] -join "`r`n").TrimEnd()
+      $after = ($lines[$anchor..($lines.Count - 1)] -join "`r`n")
+      $new2 = $before + "`r`n`r`n" + $section + "`r`n`r`n" + $after
+    }
+    [System.IO.File]::WriteAllText($WorkspaceAgents, $new2, $utf8NoBom)
+    "已插入 §2.6：$WorkspaceAgents（备份：$backup2）"
+  }
+} else {
+  "工作区级红线：未指定 -WorkspaceAgents，跳过（换机器时建议加上）"
+}
+
+# ---------- 4) 收尾提示 ----------
 ""
 "完成。验证方式："
 "  1) 新开会话问 agent：你有 ui-first-dev 技能吗？（DSH 会监视技能目录，通常无需重启）"

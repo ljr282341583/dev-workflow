@@ -1,11 +1,26 @@
-# 工作区级红线片段（贴进 `workspace/AGENTS.md` 的「2. 工作流程」章节末尾）
+# 工作区级红线片段（`workspace/AGENTS.md` §2.6）
 
-> 用途：工作区根目录 `AGENTS.md` 不在本仓库里（workspace 根不是 git 仓库），所以换机器时这一节需要手动同步。
-> 把下面整段贴到 `workspace/AGENTS.md` 的 `### 2.5 汇报` 之后、`## 3. 文件与命名规范` 之前；
-> 同时在 §7 完成标准里加一条勾选项、在文末「变更记录」加一行。
+> 为什么单独放一个文件：`workspace/AGENTS.md` **不在本仓库里**（workspace 根不是 git 仓库），
+> 它不会被 `git clone` 带到新机器上。所以这一节要么用安装脚本 `-WorkspaceAgents` 自动插入，
+> 要么手动复制下面 `BEGIN/END` 之间那段贴进新机器的 `workspace/AGENTS.md`。
+>
+> 自动插入（推荐）：
+>
+> ```powershell
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install-machine.ps1 `
+>   -WorkspaceAgents "G:\ai\deepseek harness output\workspace\AGENTS.md"
+> ```
+>
+> 脚本会：检测是否已有 §2.6（有则跳过）→ 备份 → 插到 `## 3. 文件与命名规范` 之前（找不到就插到 `## 7.` 之前，再找不到追加到文末）。
+>
+> 手动插入：复制下面 BEGIN/END 之间整段，贴到 `### 2.5 汇报` 之后、`## 3. 文件与命名规范` 之前；
+> 再按文末「配套改动」补 §7 勾选项与变更记录。
 
 ---
 
+## 片段
+
+<!-- BEGIN-SECTION-2.6 -->
 ### 2.6 带界面项目的开发流程（UI 优先，强制）
 
 > 起因：2026-11 一次"跳过 UI 设计直接写代码、成品难看"的返工。适用于 APK / App / Web / 小程序 / 桌面端 / 后台 / 新页面 / 整体换风格；纯脚本、纯后端、纯数据处理不适用。
@@ -17,10 +32,11 @@
 - **证据制**：每阶段须附真实截图，不接受"我做好了"式口头结论。
 - **例外留痕**：改 bug / 改文案走快捷通道（附一屏截图）；用户明确要求跳过设计 → 说清后果后执行，并记入该项目 `docs/DECISIONS.md`。
 - 规范正文与模板：`projects/开发规范/`（`WORKFLOW.md`、`CHECKLIST-UI.md`、`templates/`）；用户视角使用手册见大脑仓库 `教程4-UI优先开发流程.md`。
+<!-- END-SECTION-2.6 -->
 
 ---
 
-**配套改动（同一份 AGENTS.md 里）**
+## 配套改动（脚本只插上面那段，这两处需手动）
 
 §7 完成标准追加一条：
 
