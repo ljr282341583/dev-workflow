@@ -71,6 +71,21 @@ P0需求 ──①── P1 UI设计 ──②── P2 前端(mock) ──③�
 
 ---
 
+## 换机器 / 新电脑怎么装（一条命令）
+
+本规范在本机是"全局生效"的（技能 + `~/.dsh/AGENTS.md` 红线）。换机器时：
+
+```powershell
+git clone https://github.com/ljr282341583/dev-workflow.git "$env:USERPROFILE\dev-workflow"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workflow\install\install-machine.ps1"
+```
+
+脚本会：① 把 `skill/ui-first-dev` 装进 `%USERPROFILE%\.agents\skills\`（DSH 的用户级技能目录）；
+② 把「开发流程红线」插进 `%USERPROFILE%\.dsh\AGENTS.md`（已有则跳过，改前自动备份）。
+幂等、可 `-DryRun` 先看计划，细节见 [install/README.md](install/README.md)。
+
+> 工作区级还有一处：`workspace/AGENTS.md` 的 §2.6「带界面项目的开发流程」；若新机器的 workspace 是另一份，需同步过去。
+
 ## 常见问题
 
 **Q：每次都走全流程会不会太慢？**
