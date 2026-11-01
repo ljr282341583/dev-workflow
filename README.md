@@ -17,7 +17,7 @@ AI 会读 [install/AGENT-INSTALL.md](install/AGENT-INSTALL.md) 里的步骤，�
 
 ### 方式二：解压 → 双击（完全离线，不用 git）
 
-1. 下载 [最新安装包](https://github.com/ljr282341583/dev-workflow/releases/latest)（`UI优先开发流程-安装包-v*.zip`）
+1. 下载 [最新安装包](https://github.com/ljr282341583/dev-workflow/releases/latest)（`ui-first-dev-installer-v*.zip`）
 2. 解压到桌面
 3. **双击「安装.cmd」** → 看到「安装结果」全是 ✅ 就成功了
 

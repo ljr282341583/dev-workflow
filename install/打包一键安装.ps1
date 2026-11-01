@@ -70,7 +70,8 @@ $readme = @"
 [System.IO.File]::WriteAllText((Join-Path $stage "从这里开始.txt"), $readme, (New-Object System.Text.UTF8Encoding($true)))
 
 # 4) 压缩
-$zip = Join-Path $dist "$stageName.zip"
+# 注意：zip 文件名用 ASCII（中文字符经 gh CLI 上传会被改名成 "UI.-.-"），解压后的文件夹仍是中文
+$zip = Join-Path $dist "ui-first-dev-installer-v$Version.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal
 
@@ -79,5 +80,6 @@ $files = (Get-ChildItem $stage -Recurse -File).Count
 "打包完成：$zip"
 "  含 $files 个文件，$size MB，解压后根目录是：$stageName\"
 "  用法：解压 → 双击「安装.cmd」"
+"  发 Release：gh release upload <tag> `"$zip`"（文件名保持 ASCII）"
 
 if ($Open) { Start-Process explorer.exe $dist }
