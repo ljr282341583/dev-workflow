@@ -81,16 +81,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workfl
 ```
 
 脚本会：① 把 `skill/ui-first-dev` 装进 `%USERPROFILE%\.agents\skills\`（DSH 的用户级技能目录）；
-② 把「开发流程红线」插进 `%USERPROFILE%\.dsh\AGENTS.md`（已有则跳过，改前自动备份）。
-幂等、可 `-DryRun` 先看计划，细节见 [install/README.md](install/README.md)。
+② 把「开发流程红线」插进 `%USERPROFILE%\.dsh\AGENTS.md`；
+③ **自动探测工作区根**，把 §2.6 插进 `workspace/AGENTS.md`（探测顺序：当前目录向上 → 本仓库向上 → DSH 登记表 `storages\workspace.json`）。
+全都幂等、改前自动备份，`-DryRun` 可先看它会找到哪个路径，细节见 [install/README.md](install/README.md)。
 
-> 工作区级那一段（`workspace/AGENTS.md` §2.6）不在本仓库里，因为 workspace 根不是 git 仓库。换机器时可加参数让脚本一起插：
->
-> ```powershell
-> ... -WorkspaceAgents "G:\ai\deepseek harness output\workspace\AGENTS.md"
-> ```
->
-> 也可以手动贴 [install/workspace-agents-2.6.md](install/workspace-agents-2.6.md) 里的片段。
+> 工作区根因机器而异，脚本**不写死盘符**；探测不到会打印提示并跳过。要手动指定就传 `-WorkspaceAgents "<工作区根目录>"`，
+> 或者在探测不到时手动贴 [install/workspace-agents-2.6.md](install/workspace-agents-2.6.md) 里的片段。
 
 ## 常见问题
 

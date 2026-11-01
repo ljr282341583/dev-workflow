@@ -4,11 +4,12 @@
 > 它不会被 `git clone` 带到新机器上。所以这一节要么用安装脚本 `-WorkspaceAgents` 自动插入，
 > 要么手动复制下面 `BEGIN/END` 之间那段贴进新机器的 `workspace/AGENTS.md`。
 >
-> 自动插入（推荐）：
+> 自动插入（推荐，路径自动探测，不用填）：
 >
 > ```powershell
-> powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install-machine.ps1 `
->   -WorkspaceAgents "G:\ai\deepseek harness output\workspace\AGENTS.md"
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install-machine.ps1
+> # 探测不准时再显式指定：
+> # ... -WorkspaceAgents "<工作区根目录或它的 AGENTS.md>"
 > ```
 >
 > 脚本会：检测是否已有 §2.6（有则跳过）→ 备份 → 插到 `## 3. 文件与命名规范` 之前（找不到就插到 `## 7.` 之前，再找不到追加到文末）。
