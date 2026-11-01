@@ -41,9 +41,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\dev-workfl
 2. **红线在不在**：打开 `%USERPROFILE%\.dsh\AGENTS.md`，应能看到 `## 开发流程红线(有界面的项目一律执行)`。
 3. **实战验收**：说"帮我做个 XXX 的 APK"，第一条回复应该是**问题**（P0），不是代码。
 
-## 工作区级红线（可选，手动）
+## 工作区级红线（手动，换机器时需要）
 
-如果这台机器上还有同一份 `workspace/`，建议在 `workspace/AGENTS.md` 的「工作流程」章节补一节 `2.6 带界面项目的开发流程（UI 优先，强制）`（内容取自本仓库 `WORKFLOW.md` 的阶段与门禁，压缩成 6～8 条），让工作区自己的规则文件也指向本规范。
+`workspace/AGENTS.md` 不属于本仓库（workspace 根不是 git 仓库），所以这一处要手动同步：
+
+把 [`workspace-agents-2.6.md`](workspace-agents-2.6.md) 里那一节贴到 `workspace/AGENTS.md` 的「2. 工作流程」末尾（§2.5 之后），
+并按文件末尾的提示补 §7 完成标准勾选项与「变更记录」一行。
 
 ## 卸载
 
